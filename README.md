@@ -1,6 +1,6 @@
 # Overhead
 
-Wat vliegt er nu boven je huis? Deze site toont alle vliegtuigen binnen een gekozen straal als één prent op grijs papier: zijaanzichten (zelf getekende vectorillustraties in de kleuren van de maatschappij, of de foto van het toestel), breedte volgens spanwijdte, met een bijschrift met model, hoogte, stijgen/dalen/kruisen en route. De pagina schaalt zodat alles op één scherm past, ideaal voor een tablet in een lijst.
+Wat vliegt er nu boven je huis? Deze site toont alle vliegtuigen binnen een gekozen straal op een wit vel: zijaanzichten (AI-schilderijen, zelf getekende vectorillustraties in de kleuren van de maatschappij, of de foto van het toestel), breedte volgens spanwijdte, met een bijschrift met model, hoogte, stijgen/dalen/kruisen en route. De pagina schaalt zodat alles op één scherm past, ideaal voor een tablet in een lijst.
 
 Geïnspireerd door [tesserae-widget-overhead](https://github.com/dmellok/tesserae-widget-overhead); dit is een eigen, vereenvoudigde implementatie.
 

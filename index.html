@@ -3,110 +3,116 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#e2e1dc">
+<meta name="theme-color" content="#ffffff">
 <title>Overhead</title>
-<meta name="description" content="Wat vliegt er nu boven je huis, als een prent op schaal van de spanwijdte.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -2 40 40'%3E%3Cpath fill='%23222' d='M0 0c1.5 1 1.6 4 1.6 12L19 20v3L1.6 19v10l5 3v2L0 32.6-6.6 34v-2l5-3V19L-19 23v-3l17.4-8C-1.6 4-1.5 1 0 0z'/%3E%3C/svg%3E">
+<meta name="description" content="Wat vliegt er nu boven je huis, op schaal van de spanwijdte.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -2 40 40'%3E%3Cpath fill='%23111316' d='M0 0c1.5 1 1.6 4 1.6 12L19 20v3L1.6 19v10l5 3v2L0 32.6-6.6 34v-2l5-3V19L-19 23v-3l17.4-8C-1.6 4-1.5 1 0 0z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: één prent op grijs papier. Kopregel met hairline, daaronder een collage van toestellen in zijaanzicht,
-   breedte volgens spanwijdte, elk met een gecentreerd cursief bijschrift. Past zich aan tot alles op één scherm staat. */
+/* Layout: een wit vel. Bovenaan plaats en straal links, een grote klok rechts. Daaronder de toestellen in zijaanzicht,
+   breedte volgens spanwijdte, met een strak bijschrift. Past zich aan tot alles op één scherm staat. */
 :root{
-  --paper:#e2e1dc;
-  --paper-edge:#d3d2cc;
-  --ink:#1f1e1b;
-  --soft:#4b4943;
-  --rule:#8d8b84;
-  --ghost:#b9b7af;
-  --serif:"IM Fell English",Georgia,"Times New Roman",serif;
-  --caps:"IM Fell English SC","IM Fell English",Georgia,serif;
+  --bg:#ffffff;
+  --ink:#111316;
+  --muted:#6a717a;
+  --faint:#9aa1a9;
+  --line:#e7e9ec;
+  --climb:#16884a; --descend:#c26a06; --cruise:#2f62c9; --ground:#6a717a;
+  --sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,Menlo,monospace;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root{
-  --paper:#1c1c1a; --paper-edge:#141413; --ink:#e9e6dd; --soft:#b4b0a5; --rule:#6b6862; --ghost:#3a3936; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--paper);color:var(--ink);font-family:var(--serif);
-  background-image:radial-gradient(ellipse at 50% 40%,transparent 55%,var(--paper-edge) 100%);
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.page{min-height:100%;display:flex;flex-direction:column;max-width:1500px;margin:0 auto;
-  padding-block:clamp(14px,3vh,34px) clamp(12px,2.5vh,28px);
-  padding-left:max(16px,env(safe-area-inset-left,0px),3vw);padding-right:max(16px,env(safe-area-inset-right,0px),3vw)}
+.page{min-height:100%;display:flex;flex-direction:column;max-width:1600px;margin:0 auto;
+  padding-block:clamp(16px,3.2vh,40px) clamp(12px,2.4vh,28px);
+  padding-left:max(16px,env(safe-area-inset-left,0px),3.2vw);padding-right:max(16px,env(safe-area-inset-right,0px),3.2vw)}
 
-header{display:flex;align-items:baseline;justify-content:space-between;gap:8px 20px;flex-wrap:wrap;
-  border-bottom:1px solid var(--rule);padding-bottom:6px}
-.kop{font-family:var(--caps);font-size:clamp(13px,1.5vw,18px);letter-spacing:.14em;color:var(--soft)}
-.kop b{font-weight:400;color:var(--ink);letter-spacing:.16em;margin-right:.9em}
-.kop .sep{margin:0 .5em}
-.right{display:flex;align-items:baseline;gap:14px}
-.when{font-size:clamp(15px,1.7vw,21px);font-variant-numeric:lining-nums tabular-nums}
-.gear{background:none;border:0;padding:4px;margin:-4px;color:var(--soft);opacity:.55;cursor:pointer;align-self:center}
-.gear:hover,.gear:focus-visible{opacity:1}
-.gear svg{width:18px;height:18px;display:block}
-:focus-visible{outline:1px dashed var(--ink);outline-offset:3px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap}
+.eyebrow{font-family:var(--mono);font-size:clamp(11px,1vw,13px);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--climb);box-shadow:0 0 0 4px color-mix(in srgb,var(--climb) 16%,transparent)}
+h1{font-weight:600;font-size:clamp(26px,3.4vw,46px);letter-spacing:-.025em;line-height:1.05;margin:8px 0 0;text-wrap:balance}
+.right{display:flex;align-items:center;gap:18px}
+.clock{text-align:right;line-height:1}
+.clock .t{font-weight:300;font-size:clamp(34px,4.4vw,60px);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.clock .d{font-family:var(--mono);font-size:clamp(11px,1vw,13px);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.gear{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:color .2s,border-color .2s}
+.gear:hover,.gear:focus-visible{color:var(--ink);border-color:var(--faint)}
+.gear svg{width:18px;height:18px}
+:focus-visible{outline:2px solid var(--cruise);outline-offset:2px}
 
-main{flex:1;display:flex;align-items:center;justify-content:center;padding-block:clamp(10px,3vh,36px);min-height:0}
-.collage{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--gy,18px) var(--gx,26px);max-width:100%}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding-block:clamp(14px,3.5vh,44px);min-height:0}
+.collage{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--gy,22px) var(--gx,30px);max-width:100%}
 .ac{display:flex;flex-direction:column;align-items:center;max-width:100%;text-align:center}
 .ac img,.ac svg{display:block;max-width:100%;height:auto}
-.ac img.paint{mix-blend-mode:multiply}
-@media (prefers-color-scheme:dark){.ac img.paint{mix-blend-mode:normal;-webkit-mask-image:radial-gradient(ellipse 60% 60% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 60% 60% at 50% 50%,#000 60%,transparent 100%)}}
-.ac svg.illu{overflow:visible;filter:drop-shadow(0 calc(var(--s,1)*3px) calc(var(--s,1)*4px) rgba(0,0,0,.12))}
-.ac img{
-  -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 54%,#000 52%,transparent 100%);
-          mask-image:radial-gradient(ellipse 62% 58% at 50% 54%,#000 52%,transparent 100%);
-  filter:saturate(.92) contrast(1.03)}
-.cap{margin-top:calc(var(--s,1) * -2px);display:grid;line-height:1.15;font-size:calc(var(--s,1) * 13px)}
-.cap b{font-family:var(--caps);font-weight:400;font-size:1.22em;letter-spacing:.08em}
-.cap i{color:var(--soft)}
-.cap a{color:inherit;text-decoration:none}
-.credit{font-size:.78em;opacity:.7}
+.ac img.photo{border-radius:12px;object-fit:cover}
+.ac img.paint{mix-blend-mode:multiply;filter:brightness(1.05) contrast(1.08);
+  -webkit-mask-image:radial-gradient(ellipse 72% 70% at 50% 50%,#000 70%,transparent 100%);
+          mask-image:radial-gradient(ellipse 72% 70% at 50% 50%,#000 70%,transparent 100%)}
+.ac svg.illu{overflow:visible;filter:drop-shadow(0 calc(var(--s,1)*6px) calc(var(--s,1)*6px) rgba(17,19,22,.10))}
+.cap{margin-top:calc(var(--s,1) * 4px);display:grid;justify-items:center;gap:calc(var(--s,1) * 3px);font-size:calc(var(--s,1) * 12.5px);line-height:1.2}
+.cap b{font-family:var(--mono);font-weight:500;font-size:1.05em;letter-spacing:.06em}
+.cap .model{font-weight:500}
+.cap .route{color:var(--muted)}
+.cap .meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:1px}
+.cap .alt{font-family:var(--mono);font-size:.92em;color:var(--muted);font-variant-numeric:tabular-nums}
+.trend{display:inline-flex;align-items:center;gap:3px;font-size:.88em;font-weight:500;padding:1px 7px 1px 5px;border-radius:99px;color:var(--c);background:color-mix(in srgb,var(--c) 11%,transparent)}
+.trend svg{width:1em;height:1em}
+.t-climb{--c:var(--climb)}.t-descend{--c:var(--descend)}.t-cruise{--c:var(--cruise)}.t-ground{--c:var(--ground)}
+.credit{font-size:.82em;color:var(--faint)}
+.credit a{color:inherit}
 
-.empty{text-align:center;color:var(--soft);font-size:20px;font-style:italic;max-width:38ch;line-height:1.4}
-.empty b{display:block;font-family:var(--caps);font-style:normal;font-weight:400;color:var(--ink);font-size:24px;letter-spacing:.08em;margin-bottom:6px}
-footer{border-top:1px solid var(--rule);padding-top:6px;display:flex;justify-content:space-between;gap:6px 16px;flex-wrap:wrap;
-  font-style:italic;font-size:12.5px;color:var(--soft)}
+.empty{text-align:center;color:var(--muted);font-size:16px;max-width:36ch;line-height:1.5}
+.empty b{display:block;color:var(--ink);font-size:22px;font-weight:600;letter-spacing:-.01em;margin-bottom:6px}
+footer{border-top:1px solid var(--line);padding-top:10px;display:flex;justify-content:space-between;gap:6px 16px;flex-wrap:wrap;
+  font-size:12px;color:var(--faint)}
 footer a{color:inherit}
 
 /* Instellingen */
-dialog{border:1px solid var(--rule);border-radius:2px;background:var(--paper);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px));box-shadow:0 18px 50px rgba(0,0,0,.28);font-family:var(--serif)}
-dialog::backdrop{background:rgba(20,20,18,.45)}
-.dlg{padding:22px;display:grid;gap:14px}
-.dlg h2{font-family:var(--caps);font-weight:400;letter-spacing:.12em;font-size:22px;margin:0;border-bottom:1px solid var(--rule);padding-bottom:6px}
-.field{display:grid;gap:4px;font-size:16px}
-.field small{color:var(--soft);font-style:italic;font-size:14px}
-input,select{font:16px/1.3 Georgia,serif;color:var(--ink);background:transparent;border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:6px 2px;width:100%}
-input[type=range]{border:0;padding:0;accent-color:var(--ink)}
-select{background:var(--paper)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.results{display:grid;gap:2px}
-.results button{text-align:left;background:none;border:0;border-bottom:1px dotted var(--rule);padding:6px 2px;color:var(--ink);font:16px var(--serif);cursor:pointer}
-.results button small{color:var(--soft);display:block;font-style:italic;font-size:13.5px}
-.btns{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:4px}
-.btn{font:15px var(--caps);letter-spacing:.1em;padding:8px 16px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper)}
-.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
-.hint{font-size:14px;color:var(--soft);font-style:italic;margin:0}
+dialog{border:0;border-radius:16px;background:var(--bg);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px));box-shadow:0 24px 70px rgba(17,19,22,.22),0 0 0 1px var(--line);font-family:var(--sans)}
+dialog::backdrop{background:rgba(17,19,22,.32);backdrop-filter:blur(3px)}
+.dlg{padding:24px;display:grid;gap:14px}
+.dlg h2{font-size:20px;font-weight:600;letter-spacing:-.01em;margin:0}
+.field{display:grid;gap:6px;font-size:13px;font-weight:500;color:var(--muted)}
+.field small{font-weight:400;color:var(--faint)}
+input,select{font:15px var(--sans);color:var(--ink);background:#f6f7f8;border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+input:focus,select:focus{outline:2px solid color-mix(in srgb,var(--cruise) 40%,transparent);border-color:var(--cruise)}
+input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.results{display:grid;gap:4px}
+.results button{text-align:left;background:#f6f7f8;border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--ink);font:14px var(--sans);cursor:pointer}
+.results button small{color:var(--muted);display:block;font-size:12px}
+.btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+.btn{font:500 14px var(--sans);padding:10px 18px;border-radius:10px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+#f-geo{justify-self:start}
+.hint{font-size:13px;color:var(--muted);margin:0}
 @media (min-width:700px){.page{height:100%}main{overflow:hidden}}
-@media (prefers-reduced-motion:no-preference){.ac{animation:in .6s ease both}@keyframes in{from{opacity:0}}}
+@media (prefers-reduced-motion:no-preference){.ac.new{animation:in .6s ease both}@keyframes in{from{opacity:0;transform:translateY(4px)}}}
 </style>
 </head>
 <body>
 <div class="page">
   <header>
-    <div class="kop"><b id="title">OVERHEAD</b><span id="radiusTxt">BINNEN 40 KM</span><span class="sep">·</span>NU IN DE LUCHT</div>
+    <div>
+      <div class="eyebrow"><span class="dot" aria-hidden="true"></span><span id="radiusTxt">Dessel · 40 km</span></div>
+      <h1 id="title">Nu in de lucht</h1>
+    </div>
     <div class="right">
-      <span class="when" id="when">—</span>
+      <div class="clock"><div class="t" id="when">—</div><div class="d" id="date"></div></div>
       <button class="gear" id="gear" type="button" aria-label="Instellingen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
   </header>
 
-  <main id="main"><div class="collage" id="fleet"><div class="empty"><b>Het luchtruim wordt afgeluisterd</b>Een ogenblik geduld.</div></div></main>
+  <main id="main"><div class="collage" id="fleet"><div class="empty"><b>Luchtruim afluisteren</b>Even geduld.</div></div></main>
 
-  <footer><span id="place">Dessel</span><span>Posities <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> · routes <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · foto's <a href="https://www.planespotters.net" target="_blank" rel="noopener">planespotters.net</a> · getekend op schaal</span></footer>
+  <footer><span id="place">0 toestellen</span><span>Posities <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> · routes <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · breedte volgens spanwijdte</span></footer>
 </div>
 
 <dialog id="dlg">
@@ -566,8 +572,19 @@ function altLine(a) {
   if (a.onGround || a.alt == null) return motion(a);
   return `${nf.format(Math.round(a.alt / 25) * 25)} ft, ${motion(a)}`;
 }
+const TICON = {
+  climb: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5 9.5 2.5M4.5 2.5h5v5"/></svg>',
+  descend: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2.5 9.5 9.5M9.5 4.5v5h-5"/></svg>',
+  cruise: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg>',
+  ground: ""
+};
+function trendPill(a) {
+  const m = motion(a);
+  const k2 = { stijgt: "climb", daalt: "descend", kruist: "cruise" }[m] || "ground";
+  return `<span class="trend t-${k2}">${TICON[k2]}${m === "kruist" ? "cruise" : m}</span>`;
+}
 function routeLine(a) {
-  if (a.route) return `${a.route.from.city || a.route.from.iata} naar ${a.route.to.city || a.route.to.iata}`;
+  if (a.route) return `${a.route.from.city || a.route.from.iata} → ${a.route.to.city || a.route.to.iata}`;
   if (!a.onGround && a.alt != null && a.alt < 4000 && a.rate != null && a.rate < -300) return "in nadering";
   return "trekt voorbij";
 }
@@ -639,6 +656,7 @@ async function pumpPaint() {
 
 /* ---------- De prent ---------- */
 let last = null, lastOk = 0;
+const shown = new Set(); // toestellen die al op het scherm stonden, zodat alleen nieuwe invloeien
 function render(data) {
   const fleet = $("fleet");
   const usePhotos = cfg.view === "foto";
@@ -666,11 +684,11 @@ function render(data) {
     const img = paint
       ? `<img class="paint" src="${esc(paint)}" width="${(w / 0.8).toFixed(0)}" height="${(w / 0.8 * 9 / 16).toFixed(0)}" style="aspect-ratio:16/9" alt="${esc(a.sp.model)}">`
       : usePhotos && a.photo
-      ? `<img src="${esc(a.photo.src)}" width="${(w / 0.75).toFixed(0)}" height="${(w / 0.75 / 1.5).toFixed(0)}" style="aspect-ratio:3/2;object-fit:cover" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" referrerpolicy="no-referrer" loading="lazy">`
+      ? `<img class="photo" src="${esc(a.photo.src)}" width="${(w / 0.75).toFixed(0)}" height="${(w / 0.75 / 1.5).toFixed(0)}" style="aspect-ratio:3/2;object-fit:cover" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" referrerpolicy="no-referrer" loading="lazy">`
       : Illustrate.draw(a, a.sp, Math.max(k * (a.sp.span / a.sp.len), 70 / a.sp.len));
-    return `<figure class="ac" style="--s:${s.toFixed(2)};margin:0">
+    return `<figure class="ac${shown.has(a.hex) ? "" : " new"}" style="--s:${s.toFixed(2)};margin:0">
       ${img}
-      <figcaption class="cap"><b>${esc(name)}</b><i>${esc(a.sp.model)}</i><i>${esc(altLine(a))}</i><i>${esc(routeLine(a))}</i>${usePhotos && a.photo?.by ? `<i class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></i>` : ""}</figcaption>
+      <figcaption class="cap"><b>${esc(name)}</b><span class="model">${esc(a.sp.model)}</span><span class="route">${esc(routeLine(a))}</span><span class="meta">${a.onGround || a.alt == null ? "" : `<span class="alt">${nf.format(Math.round(a.alt / 25) * 25)} ft</span>`}${trendPill(a)}</span>${usePhotos && a.photo?.by ? `<span class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></span>` : ""}</figcaption>
     </figure>`;
   }).join("");
 
@@ -690,12 +708,13 @@ function render(data) {
   } else {
     fleet.innerHTML = html(Math.min(hi, (availW * 0.8) / maxSpan));
   }
+  shown.clear(); list.forEach((a) => shown.add(a.hex));
 }
 
 function header() {
-  $("title").textContent = (cfg.title || "Overhead").toUpperCase();
-  $("radiusTxt").textContent = `BINNEN ${cfg.radius} KM`;
-  $("place").textContent = cfg.place || `${cfg.lat.toFixed(3).replace(".", ",")}° N, ${cfg.lon.toFixed(3).replace(".", ",")}° O`;
+  $("title").textContent = cfg.title || "Nu in de lucht";
+  const where = cfg.place || `${cfg.lat.toFixed(2).replace(".", ",")}° N, ${cfg.lon.toFixed(2).replace(".", ",")}° O`;
+  $("radiusTxt").textContent = `${where} · ${cfg.radius} km`;
   document.title = cfg.title || "Overhead";
   tick();
 }
@@ -703,7 +722,8 @@ function tick() {
   const d = new Date();
   const t = d.toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
   const day = d.toLocaleDateString("nl-BE", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, "");
-  $("when").textContent = `${t} · ${day}`;
+  $("when").textContent = t;
+  $("date").textContent = day;
 }
 
 async function load() {
@@ -713,6 +733,8 @@ async function load() {
     if (!r.ok) throw new Error(j.error || "Fout bij ophalen");
     last = j; lastOk = Date.now();
     render(j);
+    const n = j.aircraft.length;
+    $("place").textContent = `${n} toestel${n === 1 ? "" : "len"} · bijgewerkt ${new Date(lastOk).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" })}`;
   } catch (e) {
     if (!last) $("fleet").innerHTML = `<div class="empty"><b>Geen verbinding</b>${esc(e.message)} We proberen het zo opnieuw.</div>`;
   }
