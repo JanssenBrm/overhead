@@ -1,3 +1,10 @@
 {
-  "regions": ["cdg1"]
+  "regions": [
+    "cdg1"
+  ],
+  "functions": {
+    "api/painting.js": {
+      "maxDuration": 60
+    }
+  }
 }

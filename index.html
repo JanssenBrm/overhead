@@ -51,6 +51,8 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding-block
 .collage{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--gy,18px) var(--gx,26px);max-width:100%}
 .ac{display:flex;flex-direction:column;align-items:center;max-width:100%;text-align:center}
 .ac img,.ac svg{display:block;max-width:100%;height:auto}
+.ac img.paint{mix-blend-mode:multiply}
+@media (prefers-color-scheme:dark){.ac img.paint{mix-blend-mode:normal;-webkit-mask-image:radial-gradient(ellipse 60% 60% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 60% 60% at 50% 50%,#000 60%,transparent 100%)}}
 .ac svg.illu{overflow:visible;filter:drop-shadow(0 calc(var(--s,1)*3px) calc(var(--s,1)*4px) rgba(0,0,0,.12))}
 .ac img{
   -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 54%,#000 52%,transparent 100%);
@@ -126,7 +128,7 @@ select{background:var(--paper)}
       <input id="f-rad" type="range" min="5" max="100" step="5">
     </label>
     <label class="field">Afbeeldingen
-      <select id="f-view"><option value="illustratie">Getekende illustraties</option><option value="foto">Foto's van het toestel</option></select>
+      <select id="f-view"><option value="schilderij">Schilderijen (Gemini)</option><option value="illustratie">Getekende illustraties</option><option value="foto">Foto's van het toestel</option></select>
     </label>
     <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
     <p class="hint" id="f-msg"></p>
@@ -413,7 +415,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const nf = new Intl.NumberFormat("nl-BE");
 
 /* ---------- Instellingen: URL-parameters > opgeslagen > standaard ---------- */
-const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40, view: "illustratie" };
+const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40, view: "schilderij" };
 function loadCfg() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
@@ -422,7 +424,7 @@ function loadCfg() {
   if (p.has("lat") && p.has("lon")) { cfg.lat = +p.get("lat"); cfg.lon = +p.get("lon"); cfg.place = p.get("plaats") || ""; }
   if (p.has("straal")) cfg.radius = +p.get("straal");
   if (p.has("titel")) cfg.title = p.get("titel");
-  if (p.has("weergave")) cfg.view = p.get("weergave") === "foto" ? "foto" : "illustratie";
+  if (p.has("weergave")) cfg.view = ["foto", "illustratie", "schilderij"].includes(p.get("weergave")) ? p.get("weergave") : "schilderij";
   return cfg;
 }
 let cfg = loadCfg();
@@ -604,6 +606,37 @@ async function fetchPhoto(hex) {
 }
 
 
+/* ---------- Schilderijen via onze server (Gemini), één per type + maatschappij ---------- */
+const paints = new Map(); // sleutel -> url of null
+try { const c = JSON.parse(localStorage.getItem("overhead.paints") || "{}"); for (const [k2, v] of Object.entries(c)) paints.set(k2, v); } catch (e) {}
+let paintOff = false, paintBusy = false; const paintQ = [];
+function paintKey(a) {
+  if (!a.type || !T[a.type]) return null;
+  const m = /^([A-Z]{3})\d/.exec(a.callsign || "");
+  return `${a.type}-${m ? m[1] : "GEN"}`;
+}
+function queuePaint(a) {
+  const k2 = paintKey(a);
+  if (!k2 || paintOff || paints.has(k2) || paintQ.some((x) => x.k2 === k2)) return;
+  paintQ.push({ k2, a }); pumpPaint();
+}
+async function pumpPaint() {
+  if (paintBusy || !paintQ.length || paintOff) return;
+  paintBusy = true;
+  const { k2, a } = paintQ.shift();
+  try {
+    const [type, op] = k2.split("-");
+    const qs = new URLSearchParams({ type, op: op === "GEN" ? "" : op, model: spec(a).model, airline: a.airline || a.operator || "", mil: Illustrate.livery(a, spec(a)).mil ? "1" : "0" });
+    const r = await fetch(`/api/painting?${qs}`);
+    const j = await r.json();
+    if (j.reason === "not-configured") paintOff = true;
+    else if (j.url) { paints.set(k2, j.url); try { localStorage.setItem("overhead.paints", JSON.stringify(Object.fromEntries(paints))); } catch (e) {} if (last) render(last); }
+    else if (j.reason === "limit") paintOff = true; // daglimiet bereikt: vandaag niets nieuws meer vragen
+  } catch (e) {}
+  paintBusy = false;
+  setTimeout(pumpPaint, 300);
+}
+
 /* ---------- De prent ---------- */
 let last = null, lastOk = 0;
 function render(data) {
@@ -611,6 +644,8 @@ function render(data) {
   const usePhotos = cfg.view === "foto";
   const list = (data?.aircraft || []).map((a) => ({ ...a, sp: spec(a), photo: photos.get(a.hex) || null }));
   if (usePhotos) list.forEach((a) => queuePhoto(a.hex));
+  const usePaint = cfg.view === "schilderij";
+  if (usePaint) list.forEach((a) => queuePaint(a));
   if (!list.length) {
     fleet.innerHTML = `<div class="empty"><b>Een lege hemel</b>Niets binnen ${cfg.radius} km. Over een halve minuut kijken we opnieuw.</div>`;
     return;
@@ -627,7 +662,10 @@ function render(data) {
     const w = Math.max(70, a.sp.span * k);
     const s = Math.max(0.85, Math.min(1.35, w / 260));
     const name = a.callsign || a.reg || a.hex.toUpperCase();
-    const img = usePhotos && a.photo
+    const paint = usePaint ? paints.get(paintKey(a)) : null;
+    const img = paint
+      ? `<img class="paint" src="${esc(paint)}" width="${(w / 0.8).toFixed(0)}" height="${(w / 0.8 * 9 / 16).toFixed(0)}" style="aspect-ratio:16/9" alt="${esc(a.sp.model)}">`
+      : usePhotos && a.photo
       ? `<img src="${esc(a.photo.src)}" width="${(w / 0.75).toFixed(0)}" height="${(w / 0.75 / 1.5).toFixed(0)}" style="aspect-ratio:3/2;object-fit:cover" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" referrerpolicy="no-referrer" loading="lazy">`
       : Illustrate.draw(a, a.sp, Math.max(k * (a.sp.span / a.sp.len), 70 / a.sp.len));
     return `<figure class="ac" style="--s:${s.toFixed(2)};margin:0">

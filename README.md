@@ -29,3 +29,16 @@ Silhouetten worden getekend uit een tabel met ICAO-typecodes (spanwijdte, lengte
 ```
 npx vercel dev
 ```
+
+## Schilderijen met Gemini (optioneel)
+
+In de weergave "Schilderijen" maakt `api/painting.js` per combinatie van vliegtuigtype en maatschappij één schilderij met de Gemini-beeld-API en bewaart het in Vercel Blob. Daarna wordt het nooit opnieuw gemaakt.
+
+Nodig in Vercel (Settings › Environment Variables):
+
+- `GEMINI_API_KEY`: sleutel van Google AI Studio (beeldgeneratie heeft geen gratis tier)
+- `BLOB_READ_WRITE_TOKEN`: komt er vanzelf bij als je een Blob-opslag aan het project koppelt (Storage › Create › Blob)
+
+Optioneel: `DAILY_PAINT_LIMIT` (standaard 30 per dag), `GEMINI_IMAGE_MODEL` (standaard `gemini-nano-banana-2.1`), `PAINT_STYLE`.
+
+Zonder deze instellingen toont de site de getekende illustraties.
