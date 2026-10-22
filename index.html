@@ -50,9 +50,7 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding-block
 .ac{display:flex;flex-direction:column;align-items:center;max-width:100%;text-align:center}
 .ac img,.ac svg{display:block;max-width:100%;height:auto}
 .ac img.photo{border-radius:12px;object-fit:cover}
-.ac img.paint{mix-blend-mode:multiply;filter:brightness(1.05) contrast(1.08);
-  -webkit-mask-image:radial-gradient(ellipse 72% 70% at 50% 50%,#000 70%,transparent 100%);
-          mask-image:radial-gradient(ellipse 72% 70% at 50% 50%,#000 70%,transparent 100%)}
+.ac img.paint{filter:drop-shadow(0 calc(var(--s,1)*7px) calc(var(--s,1)*7px) rgba(17,19,22,.13))}
 .ac svg.illu{overflow:visible;filter:drop-shadow(0 calc(var(--s,1)*6px) calc(var(--s,1)*6px) rgba(17,19,22,.10))}
 .cap{margin-top:calc(var(--s,1) * 4px);display:grid;justify-items:center;gap:calc(var(--s,1) * 3px);font-size:calc(var(--s,1) * 12.5px);line-height:1.2}
 .cap b{font-family:var(--mono);font-weight:500;font-size:1.05em;letter-spacing:.06em}
@@ -91,7 +89,8 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
 #f-geo{justify-self:start}
 .hint{font-size:13px;color:var(--muted);margin:0}
-@media (min-width:700px){.page{height:100%}main{overflow:hidden}}
+.page{height:100%;height:100dvh}main{overflow:hidden}
+@media (max-width:560px){.cap .route{display:none}.clock .t{font-size:30px}h1{font-size:24px}}
 @media (prefers-reduced-motion:no-preference){.ac.new{animation:in .6s ease both}@keyframes in{from{opacity:0;transform:translateY(4px)}}}
 </style>
 </head>
@@ -654,12 +653,55 @@ async function pumpPaint() {
   setTimeout(pumpPaint, 300);
 }
 
+/* ---------- Uitknippen: achtergrond vanaf de randen doorzichtig maken en bijsnijden ---------- */
+const cut = new Map(); // url -> { src, w, h } | "pending"
+function cutout(url) {
+  if (cut.has(url)) return cut.get(url);
+  cut.set(url, "pending");
+  const im = new Image();
+  im.onload = () => {
+    try {
+      const W = im.naturalWidth, H = im.naturalHeight;
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(im, 0, 0);
+      const id = x.getImageData(0, 0, W, H), d = id.data, n = W * H;
+      const bg = (p) => { const r = d[p * 4], g = d[p * 4 + 1], b = d[p * 4 + 2]; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mn >= 214 && mx - mn <= 26; };
+      const seen = new Uint8Array(n), st = new Int32Array(n); let sp = 0;
+      const push = (p) => { if (!seen[p] && bg(p)) { seen[p] = 1; st[sp++] = p; } };
+      for (let i = 0; i < W; i++) { push(i); push((H - 1) * W + i); }
+      for (let j = 0; j < H; j++) { push(j * W); push(j * W + W - 1); }
+      while (sp) { const p = st[--sp], px = p % W; if (px > 0) push(p - 1); if (px < W - 1) push(p + 1); if (p >= W) push(p - W); if (p < n - W) push(p + W); }
+      let x0 = W, y0 = H, x1 = -1, y1 = -1;
+      for (let p = 0; p < n; p++) {
+        if (seen[p]) { d[p * 4 + 3] = 0; continue; }
+        const px = p % W, py = (p / W) | 0;
+        // zachte rand: lichte pixels naast de achtergrond half doorzichtig
+        if ((px > 0 && seen[p - 1]) || (px < W - 1 && seen[p + 1]) || (p >= W && seen[p - W]) || (p < n - W && seen[p + W])) {
+          const l = (d[p * 4] + d[p * 4 + 1] + d[p * 4 + 2]) / 3;
+          if (l > 190) d[p * 4 + 3] = 140;
+        }
+        if (px < x0) x0 = px; if (px > x1) x1 = px; if (py < y0) y0 = py; if (py > y1) y1 = py;
+      }
+      if (x1 < 0) { cut.set(url, { src: url, w: W, h: H }); return; }
+      x.putImageData(id, 0, 0);
+      const pad = 2, cw = x1 - x0 + 1 + pad * 2, ch = y1 - y0 + 1 + pad * 2;
+      const o = document.createElement("canvas"); o.width = cw; o.height = ch;
+      o.getContext("2d").drawImage(c, x0 - pad, y0 - pad, cw, ch, 0, 0, cw, ch);
+      o.toBlob((b) => { cut.set(url, { src: b ? URL.createObjectURL(b) : url, w: cw, h: ch }); if (last) render(last); }, "image/png");
+    } catch (e) { cut.set(url, { src: url, w: im.naturalWidth, h: im.naturalHeight }); if (last) render(last); }
+  };
+  im.onerror = () => cut.delete(url);
+  im.src = url;
+  return "pending";
+}
+
 /* ---------- De prent ---------- */
 let last = null, lastOk = 0;
 const shown = new Set(); // toestellen die al op het scherm stonden, zodat alleen nieuwe invloeien
 function render(data) {
   const fleet = $("fleet");
   const usePhotos = cfg.view === "foto";
+  const narrow = innerWidth < 560, minW = narrow ? 34 : 60;
   const list = (data?.aircraft || []).map((a) => ({ ...a, sp: spec(a), photo: photos.get(a.hex) || null }));
   if (usePhotos) list.forEach((a) => queuePhoto(a.hex));
   const usePaint = cfg.view === "schilderij";
@@ -677,15 +719,16 @@ function render(data) {
 
   const html = (k) => order.map((a) => {
     // Een foto toont het toestel op ongeveer 75% van de beeldbreedte; silhouetten tekenen we op de romplengte
-    const w = Math.max(70, a.sp.span * k);
-    const s = Math.max(0.85, Math.min(1.35, w / 260));
+    const w = Math.max(minW, a.sp.span * k);
+    const s = Math.max(narrow ? 0.78 : 0.85, Math.min(1.35, w / 260));
     const name = a.callsign || a.reg || a.hex.toUpperCase();
-    const paint = usePaint ? paints.get(paintKey(a)) : null;
-    const img = paint
-      ? `<img class="paint" src="${esc(paint)}" width="${(w / 0.8).toFixed(0)}" height="${(w / 0.8 * 9 / 16).toFixed(0)}" style="aspect-ratio:16/9" alt="${esc(a.sp.model)}">`
+    const pUrl = usePaint ? paints.get(paintKey(a)) : null;
+    const paint = pUrl ? cutout(pUrl) : null;
+    const img = paint && paint !== "pending"
+      ? `<img class="paint" src="${esc(paint.src)}" width="${w.toFixed(0)}" height="${(w * paint.h / paint.w).toFixed(0)}" alt="${esc(a.sp.model)}">`
       : usePhotos && a.photo
       ? `<img class="photo" src="${esc(a.photo.src)}" width="${(w / 0.75).toFixed(0)}" height="${(w / 0.75 / 1.5).toFixed(0)}" style="aspect-ratio:3/2;object-fit:cover" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" referrerpolicy="no-referrer" loading="lazy">`
-      : Illustrate.draw(a, a.sp, Math.max(k * (a.sp.span / a.sp.len), 70 / a.sp.len));
+      : Illustrate.draw(a, a.sp, Math.max(k, minW / a.sp.span));
     return `<figure class="ac${shown.has(a.hex) ? "" : " new"}" style="--s:${s.toFixed(2)};margin:0">
       ${img}
       <figcaption class="cap"><b>${esc(name)}</b><span class="model">${esc(a.sp.model)}</span><span class="route">${esc(routeLine(a))}</span><span class="meta">${a.onGround || a.alt == null ? "" : `<span class="alt">${nf.format(Math.round(a.alt / 25) * 25)} ft</span>`}${trendPill(a)}</span>${usePhotos && a.photo?.by ? `<span class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></span>` : ""}</figcaption>
@@ -696,17 +739,15 @@ function render(data) {
   const main = $("main");
   const availW = fleet.parentElement.clientWidth;
   const maxSpan = list[0].sp.span;
-  let hi = (availW * 0.55) / maxSpan, lo = 1;
+  let hi = (availW * (narrow ? 0.92 : 0.55)) / maxSpan, lo = 0.3;
   const fits = () => main.scrollHeight <= main.clientHeight + 1 && fleet.scrollWidth <= availW + 1;
-  if (innerWidth >= 700) {
+  {
     for (let i = 0; i < 9; i++) {
       const mid = (lo + hi) / 2;
       fleet.innerHTML = html(mid);
       if (fits()) lo = mid; else hi = mid;
     }
     fleet.innerHTML = html(lo);
-  } else {
-    fleet.innerHTML = html(Math.min(hi, (availW * 0.8) / maxSpan));
   }
   shown.clear(); list.forEach((a) => shown.add(a.hex));
 }
