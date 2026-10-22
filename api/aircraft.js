@@ -85,6 +85,7 @@ async function photo(hex) {
       if (!value.src) value = null;
     }
   } catch (e) {
+    console.error("planespotters", hex, String(e));
     return null; // niet cachen bij een fout, volgende keer opnieuw proberen
   }
   photoCache.set(hex, { at: Date.now(), value });
