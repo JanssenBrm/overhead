@@ -3,148 +3,115 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#e9eef0">
+<meta name="theme-color" content="#e2e1dc">
 <title>Overhead</title>
-<meta name="description" content="Wat vliegt er nu boven je huis, getekend op schaal van de spanwijdte.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -2 40 40'%3E%3Cpath fill='%23173049' d='M0 0c1.5 1 1.6 4 1.6 12L19 20v3L1.6 19v10l5 3v2L0 32.6-6.6 34v-2l5-3V19L-19 23v-3l17.4-8C-1.6 4-1.5 1 0 0z'/%3E%3C/svg%3E">
+<meta name="description" content="Wat vliegt er nu boven je huis, als een prent op schaal van de spanwijdte.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -2 40 40'%3E%3Cpath fill='%23222' d='M0 0c1.5 1 1.6 4 1.6 12L19 20v3L1.6 19v10l5 3v2L0 32.6-6.6 34v-2l5-3V19L-19 23v-3l17.4-8C-1.6 4-1.5 1 0 0z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap">
 <style>
-/* Layout: een specimenbord. Alle toestellen in bovenaanzicht op één gedeelde schaal, groot naar klein, met een kaartje eronder. */
+/* Layout: één prent op grijs papier. Kopregel met hairline, daaronder een collage van toestellen in zijaanzicht,
+   breedte volgens spanwijdte, elk met een gecentreerd cursief bijschrift. Past zich aan tot alles op één scherm staat. */
 :root{
-  --floor:#e9eef0;        /* hangarvloer */
-  --sheet:#f6f8f9;
-  --ink:#14222e;
-  --muted:#5d6c76;
-  --rule:#c9d3d8;
-  --plane:#173049;        /* romp en vleugels */
-  --plane2:#3b5a78;       /* motoren, staart */
-  --accent:#d2541c;       /* signaaloranje, schaalbalk en focus */
-  --climb:#2f7a4a; --descend:#a8650a; --cruise:#2d6a9a;
-  --display:"Saira Condensed","Arial Narrow",sans-serif;
-  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --paper:#e2e1dc;
+  --paper-edge:#d3d2cc;
+  --ink:#1f1e1b;
+  --soft:#4b4943;
+  --rule:#8d8b84;
+  --ghost:#b9b7af;
+  --serif:"IM Fell English",Georgia,"Times New Roman",serif;
+  --caps:"IM Fell English SC","IM Fell English",Georgia,serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --floor:#0f171d; --sheet:#152129; --ink:#e4ecef; --muted:#90a1aa; --rule:#2a3a44;
-  --plane:#d9e6ee; --plane2:#8fb1cc; --accent:#f07a3d;
-  --climb:#69c08a; --descend:#e2a54a; --cruise:#79b4e2; color-scheme:dark}}
+  --paper:#1c1c1a; --paper-edge:#141413; --ink:#e9e6dd; --soft:#b4b0a5; --rule:#6b6862; --ghost:#3a3936; color-scheme:dark}}
 *{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--floor);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4;min-height:100vh;
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--serif);
+  background-image:radial-gradient(ellipse at 50% 40%,transparent 55%,var(--paper-edge) 100%);
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.wrap{max-width:1400px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.page{min-height:100%;display:flex;flex-direction:column;max-width:1500px;margin:0 auto;
+  padding-block:clamp(14px,3vh,34px) clamp(12px,2.5vh,28px);
+  padding-left:max(16px,env(safe-area-inset-left,0px),3vw);padding-right:max(16px,env(safe-area-inset-right,0px),3vw)}
 
-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
-.eyebrow{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
-h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,48px);line-height:1;margin:4px 0 0;text-wrap:balance}
-.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-family:var(--mono);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.meta .live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--climb);margin-right:6px;vertical-align:1px;animation:pulse 2s infinite}
-.meta .stale::before{background:var(--descend);animation:none}
-@keyframes pulse{50%{opacity:.25}}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:8px 20px;flex-wrap:wrap;
+  border-bottom:1px solid var(--rule);padding-bottom:6px}
+.kop{font-family:var(--caps);font-size:clamp(13px,1.5vw,18px);letter-spacing:.14em;color:var(--soft)}
+.kop b{font-weight:400;color:var(--ink);letter-spacing:.16em;margin-right:.9em}
+.kop .sep{margin:0 .5em}
+.right{display:flex;align-items:baseline;gap:14px}
+.when{font-size:clamp(15px,1.7vw,21px);font-variant-numeric:lining-nums tabular-nums}
+.gear{background:none;border:0;padding:4px;margin:-4px;color:var(--soft);opacity:.55;cursor:pointer;align-self:center}
+.gear:hover,.gear:focus-visible{opacity:1}
+.gear svg{width:18px;height:18px;display:block}
+:focus-visible{outline:1px dashed var(--ink);outline-offset:3px}
 
-.gear{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);display:grid;place-items:center;cursor:pointer}
-.gear:hover{border-color:var(--ink)}
-.gear svg{width:22px;height:22px}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding-block:clamp(10px,3vh,36px);min-height:0}
+.collage{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--gy,18px) var(--gx,26px);max-width:100%}
+.ac{display:flex;flex-direction:column;align-items:center;max-width:100%;text-align:center}
+.ac img,.ac svg{display:block;max-width:100%;height:auto}
+.ac img{
+  -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 54%,#000 52%,transparent 100%);
+          mask-image:radial-gradient(ellipse 62% 58% at 50% 54%,#000 52%,transparent 100%);
+  filter:saturate(.92) contrast(1.03)}
+.cap{margin-top:calc(var(--s,1) * -2px);display:grid;line-height:1.15;font-size:calc(var(--s,1) * 13px)}
+.cap b{font-family:var(--caps);font-weight:400;font-size:1.22em;letter-spacing:.08em}
+.cap i{color:var(--soft)}
+.cap a{color:inherit;text-decoration:none}
+.credit{font-size:.78em;opacity:.7}
 
-.board{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:22px 18px 26px;position:relative;
-  background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);
-  background-size:var(--grid,40px) var(--grid,40px);background-position:-1px -1px}
-.board::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--sheet);opacity:.82;pointer-events:none}
-.board>*{position:relative}
-.scalebar{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-bottom:18px}
-.scalebar i{display:block;height:6px;border:2px solid var(--accent);border-top:none}
-
-.fleet{display:flex;flex-wrap:wrap;gap:30px 26px;align-items:flex-end;justify-content:center}
-.ac{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:150px;max-width:100%}
-.ac svg{display:block;overflow:visible;max-width:100%;height:auto;transition:transform .3s}
-.ac:hover svg{transform:translateY(-3px)}
-.ac.ph{min-width:0}
-.ac.ph .card{width:100%}
-.photo{margin:0;position:relative;width:100%;border-radius:6px;overflow:hidden;background:var(--rule)}
-.photo img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;transition:transform .4s}
-.ac.ph:hover .photo img{transform:scale(1.03)}
-.photo figcaption{position:absolute;right:6px;bottom:6px;font:10.5px/1.3 var(--mono);background:rgba(0,0,0,.6);color:#fff;padding:2px 6px;border-radius:3px;max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.photo figcaption a{color:#fff;text-decoration:none}
-.ruler{display:grid;justify-items:start;gap:3px;width:100%;font:11px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
-.ruler i{height:7px;border:2px solid var(--accent);border-top:none;flex:none}
-.ruler span{white-space:nowrap}
-.silbox{aspect-ratio:3/2;display:grid;place-items:center;background:color-mix(in srgb,var(--plane2) 14%,var(--sheet))}
-.silbox svg{max-width:85%;max-height:85%}
-.card{width:168px;border-top:2px solid var(--ink);padding-top:7px;display:grid;gap:3px;font-size:13px}
-.cs{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-.cs b{font-family:var(--display);font-size:21px;font-weight:700;letter-spacing:.01em;line-height:1}
-.cs span{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.model{font-weight:600}
-.airline{color:var(--muted);font-size:12px;margin-top:-2px}
-.route{font-family:var(--mono);font-size:12.5px}
-.route small{display:block;font-family:var(--body);font-size:11.5px;color:var(--muted)}
-.alt{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums;display:grid;justify-items:start;gap:5px;margin-top:2px}
-.trend{display:inline-flex;align-items:center;gap:4px;font-family:var(--body);font-size:11.5px;font-weight:600;padding:1px 7px 1px 5px;border-radius:99px;border:1.5px solid currentColor;white-space:nowrap}
-.trend svg{width:12px;height:12px}
-.t-climb{color:var(--climb)}.t-descend{color:var(--descend)}.t-cruise{color:var(--cruise)}.t-ground{color:var(--muted)}
-
-.empty{text-align:center;padding:60px 16px;color:var(--muted);max-width:46ch;margin:0 auto}
-.empty b{display:block;font-family:var(--display);font-size:26px;color:var(--ink);margin-bottom:6px}
-footer{margin-top:18px;font-size:12px;color:var(--muted);text-align:center}
+.empty{text-align:center;color:var(--soft);font-size:20px;font-style:italic;max-width:38ch;line-height:1.4}
+.empty b{display:block;font-family:var(--caps);font-style:normal;font-weight:400;color:var(--ink);font-size:24px;letter-spacing:.08em;margin-bottom:6px}
+footer{border-top:1px solid var(--rule);padding-top:6px;display:flex;justify-content:space-between;gap:6px 16px;flex-wrap:wrap;
+  font-style:italic;font-size:12.5px;color:var(--soft)}
 footer a{color:inherit}
 
 /* Instellingen */
-dialog{border:1px solid var(--rule);border-radius:12px;background:var(--sheet);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
-dialog::backdrop{background:rgba(10,20,28,.45)}
-.dlg{padding:22px;display:grid;gap:16px}
-.dlg h2{font-family:var(--display);font-size:26px;margin:0}
-.field{display:grid;gap:5px;font-size:13.5px;font-weight:500}
-.field small{font-weight:400;color:var(--muted)}
-input,select{font:inherit;color:var(--ink);background:var(--floor);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;width:100%}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.results{display:grid;gap:4px}
-.results button{text-align:left;background:var(--floor);border:1px solid var(--rule);border-radius:6px;padding:7px 10px;color:var(--ink);font:inherit;cursor:pointer}
-.results button small{color:var(--muted);display:block;font-size:12px}
-.btns{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
-.btn{font:inherit;font-weight:600;border-radius:6px;padding:9px 16px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--sheet)}
+dialog{border:1px solid var(--rule);border-radius:2px;background:var(--paper);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px));box-shadow:0 18px 50px rgba(0,0,0,.28);font-family:var(--serif)}
+dialog::backdrop{background:rgba(20,20,18,.45)}
+.dlg{padding:22px;display:grid;gap:14px}
+.dlg h2{font-family:var(--caps);font-weight:400;letter-spacing:.12em;font-size:22px;margin:0;border-bottom:1px solid var(--rule);padding-bottom:6px}
+.field{display:grid;gap:4px;font-size:16px}
+.field small{color:var(--soft);font-style:italic;font-size:14px}
+input,select{font:16px/1.3 Georgia,serif;color:var(--ink);background:transparent;border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:6px 2px;width:100%}
+input[type=range]{border:0;padding:0;accent-color:var(--ink)}
+select{background:var(--paper)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.results{display:grid;gap:2px}
+.results button{text-align:left;background:none;border:0;border-bottom:1px dotted var(--rule);padding:6px 2px;color:var(--ink);font:16px var(--serif);cursor:pointer}
+.results button small{color:var(--soft);display:block;font-style:italic;font-size:13.5px}
+.btns{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:4px}
+.btn{font:15px var(--caps);letter-spacing:.1em;padding:8px 16px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--paper)}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
-.hint{font-size:12px;color:var(--muted)}
-@media (max-width:560px){
-  .fleet{gap:26px 12px;justify-content:space-between}
-  .ac{width:calc(50% - 6px);min-width:0}
-  .card{width:100%}
-  .cs b{font-size:18px}
-  .board{padding:16px 12px 20px}
-}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.hint{font-size:14px;color:var(--soft);font-style:italic;margin:0}
+@media (min-width:700px){.page{height:100%}main{overflow:hidden}}
+@media (prefers-reduced-motion:no-preference){.ac{animation:in .6s ease both}@keyframes in{from{opacity:0}}}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="page">
   <header>
-    <div>
-      <div class="eyebrow" id="where">Locatie instellen</div>
-      <h1 id="title">Wat vliegt er boven ons?</h1>
-      <div class="meta"><span id="status">laden…</span><span id="count"></span></div>
+    <div class="kop"><b id="title">OVERHEAD</b><span id="radiusTxt">BINNEN 40 KM</span><span class="sep">·</span>NU IN DE LUCHT</div>
+    <div class="right">
+      <span class="when" id="when">—</span>
+      <button class="gear" id="gear" type="button" aria-label="Instellingen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
     </div>
-    <button class="gear" id="gear" type="button" aria-label="Instellingen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </button>
   </header>
 
-  <main class="board" id="board">
-    <div class="scalebar" id="scalebar"></div>
-    <div class="fleet" id="fleet"><div class="empty"><b>Luchtruim afluisteren…</b>Even geduld.</div></div>
-  </main>
+  <main id="main"><div class="collage" id="fleet"><div class="empty"><b>Het luchtruim wordt afgeluisterd</b>Een ogenblik geduld.</div></div></main>
 
-  <footer>Posities: <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> / <a href="https://adsb.fi" target="_blank" rel="noopener">adsb.fi</a> · Routes: <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · Foto's: <a href="https://www.planespotters.net" target="_blank" rel="noopener">planespotters.net</a>, © de vermelde fotografen · De oranje lat toont de spanwijdte op schaal.</footer>
+  <footer><span id="place">Dessel</span><span>Posities <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> · routes <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · foto's <a href="https://www.planespotters.net" target="_blank" rel="noopener">planespotters.net</a> · breedte volgens spanwijdte</span></footer>
 </div>
 
 <dialog id="dlg">
   <form class="dlg" id="form" method="dialog">
     <h2>Instellingen</h2>
-    <label class="field">Titel
-      <input id="f-title" placeholder="Wat vliegt er boven ons?">
-      <small>Bijvoorbeeld "Boven het huis van Jos".</small>
+    <label class="field">Titel in de kop
+      <input id="f-title" placeholder="Overhead">
+      <small>Bijvoorbeeld "Boven Dessel" of een naam.</small>
     </label>
     <label class="field">Zoek een plaats
       <input id="f-search" placeholder="Gemeente of straat" autocomplete="off">
@@ -158,7 +125,7 @@ input,select{font:inherit;color:var(--ink);background:var(--floor);border:1px so
       <input id="f-rad" type="range" min="5" max="100" step="5">
     </label>
     <label class="field">Afbeeldingen
-      <select id="f-view"><option value="foto">Foto's van het toestel</option><option value="silhouet">Silhouetten op schaal</option></select>
+      <select id="f-view"><option value="foto">Foto's van het toestel</option><option value="silhouet">Getekende silhouetten</option></select>
     </label>
     <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
     <p class="hint" id="f-msg"></p>
@@ -314,31 +281,45 @@ function drawPlane(sp, k) {
   return `<svg width="${(w*k).toFixed(1)}" height="${(hgt*k).toFixed(1)}" viewBox="${g.left - pad} ${g.top - pad} ${w} ${hgt}" role="img" aria-label="${esc(sp.model)}, spanwijdte ${sp.span} meter"><g fill="var(--plane)">${g.svg}</g></svg>`;
 }
 
-/* ---------- Trend en hoogte ---------- */
-const ICON = {
-  climb: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 9.5 2M4.5 2h5v5"/></svg>',
-  descend: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2.5 9.5 10M9.5 5v5h-5"/></svg>',
-  cruise: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg>',
-  ground: ''
-};
-function trend(a) {
-  if (a.onGround) return ["ground", "aan de grond"];
+
+/* ---------- Zijaanzicht als potloodsilhouet (als er geen foto is) ---------- */
+function side(sp, widthPx) {
+  const L = sp.len, H = L * 0.42, fh = L * 0.1;
+  const y = H * 0.55; // romp-as
+  let d = "", extra = "";
+  if (sp.shape === "heli") {
+    d = `<ellipse cx="${L*0.3}" cy="${y}" rx="${L*0.22}" ry="${fh*1.4}"/><path d="M${L*0.45} ${y-fh*0.4} L${L*0.95} ${y-fh*0.6} L${L*0.95} ${y-fh*0.2} L${L*0.45} ${y+fh*0.3}Z"/><path d="M${L*0.9} ${y-fh*1.8} L${L} ${y-fh*1.8} L${L*0.97} ${y-fh*0.2} L${L*0.92} ${y-fh*0.2}Z"/>`;
+    extra = `<path d="M${L*0.3 - sp.span/2} ${y-fh*2.1} L${L*0.3 + sp.span/2} ${y-fh*2.1}" stroke="currentColor" stroke-width="${fh*0.18}"/><path d="M${L*0.3} ${y-fh*2.1} L${L*0.3} ${y-fh*1.3}" stroke="currentColor" stroke-width="${fh*0.25}"/>`;
+  } else {
+    const nose = fh * 1.3, tailUp = sp.shape === "ga" ? fh * 1.6 : fh * 2.1;
+    d = `<path d="M0 ${y} C0 ${y-fh*0.55} ${nose*0.4} ${y-fh/2} ${nose} ${y-fh/2} L${L*0.8} ${y-fh/2} L${L} ${y-fh*0.35} L${L} ${y-fh*0.1} L${L*0.8} ${y+fh*0.25} L${nose} ${y+fh/2} C${nose*0.3} ${y+fh/2} 0 ${y+fh*0.3} 0 ${y}Z"/>`;
+    d += `<path d="M${L*0.8} ${y-fh/2} L${L*0.93} ${y-fh/2-tailUp} L${L*0.99} ${y-fh/2-tailUp} L${L} ${y-fh*0.35}Z"/>`;
+    d += `<path d="M${L*0.4} ${y+fh*0.2} L${L*0.62} ${y+fh*0.35} L${L*0.62} ${y+fh*0.5} L${L*0.4} ${y+fh*0.45}Z" opacity=".7"/>`;
+    if (sp.shape === "jet" || sp.shape === "jet4") extra = `<ellipse cx="${L*0.4}" cy="${y+fh*0.75}" rx="${L*0.07}" ry="${fh*0.3}" opacity=".85"/>`;
+    if (sp.shape === "tail") extra = `<ellipse cx="${L*0.74}" cy="${y-fh*0.55}" rx="${L*0.07}" ry="${fh*0.28}" opacity=".85"/>`;
+    if (sp.shape === "prop" || sp.shape === "prop4") extra = `<ellipse cx="${L*0.36}" cy="${y-fh*0.3}" rx="${L*0.08}" ry="${fh*0.25}" opacity=".85"/><path d="M${L*0.28} ${y-fh*1.5} L${L*0.28} ${y+fh*0.9}" stroke="currentColor" stroke-width="${fh*0.06}"/>`;
+    if (sp.shape === "ga") extra = `<path d="M${-fh*0.1} ${y-fh*1.3} L${-fh*0.1} ${y+fh*1.3}" stroke="currentColor" stroke-width="${fh*0.08}"/>`;
+  }
+  const pad = L * 0.06;
+  return `<svg width="${widthPx.toFixed(0)}" viewBox="${-pad} ${-pad} ${L + pad*2} ${H + pad*2}" style="color:var(--ghost)" role="img" aria-label="${esc(sp.model)}"><g fill="currentColor">${d}${extra}</g></svg>`;
+}
+
+/* ---------- Bijschrift ---------- */
+function motion(a) {
+  if (a.onGround) return "aan de grond";
   const r = a.rate;
-  if (r == null) return ["cruise", "cruise"];
-  if (r > 300) return ["climb", "stijgt"];
-  if (r < -300) return ["descend", "daalt"];
-  return ["cruise", "cruise"];
+  if (r != null && r > 300) return "stijgt";
+  if (r != null && r < -300) return "daalt";
+  return "kruist";
 }
-function altText(a) {
-  if (a.onGround) return "grond";
-  if (a.alt == null) return "—";
-  const ft = Math.round(a.alt), m = Math.round(ft * 0.3048 / 10) * 10;
-  return ft >= 6000 ? `FL${String(Math.round(ft / 100)).padStart(3, "0")} · ${nf.format(m)} m` : `${nf.format(ft)} ft · ${nf.format(m)} m`;
+function altLine(a) {
+  if (a.onGround || a.alt == null) return motion(a);
+  return `${nf.format(Math.round(a.alt / 25) * 25)} ft, ${motion(a)}`;
 }
-function routeHtml(a) {
-  if (!a.route) return `<div class="route"><span style="color:var(--muted)">route onbekend</span></div>`;
-  const f = a.route.from, t = a.route.to;
-  return `<div class="route">${esc(f.iata)} → ${esc(t.iata)}<small>${esc(f.city || "")} naar ${esc(t.city || "")}</small></div>`;
+function routeLine(a) {
+  if (a.route) return `${a.route.from.city || a.route.from.iata} naar ${a.route.to.city || a.route.to.iata}`;
+  if (!a.onGround && a.alt != null && a.alt < 4000 && a.rate != null && a.rate < -300) return "in nadering";
+  return "trekt voorbij";
 }
 
 /* ---------- Foto's: eerst rechtstreeks vanuit de browser, anders via onze server ---------- */
@@ -374,59 +355,69 @@ async function fetchPhoto(hex) {
   return undefined; // onbekend, later opnieuw proberen
 }
 
-/* ---------- Tekenen ---------- */
+
+/* ---------- De prent ---------- */
 let last = null, lastOk = 0;
 function render(data) {
   const fleet = $("fleet");
+  const usePhotos = cfg.view !== "silhouet";
   const list = (data?.aircraft || []).map((a) => ({ ...a, sp: spec(a), photo: photos.get(a.hex) || null }));
-  if (cfg.view !== "silhouet") list.forEach((a) => queuePhoto(a.hex));
-  $("count").textContent = data ? `${list.length} toestel${list.length === 1 ? "" : "len"} binnen ${cfg.radius} km` : "";
+  if (usePhotos) list.forEach((a) => queuePhoto(a.hex));
   if (!list.length) {
-    fleet.innerHTML = `<div class="empty"><b>Het luchtruim is even leeg</b>Niets binnen ${cfg.radius} km. Over een minuut kijken we opnieuw.</div>`;
-    $("scalebar").innerHTML = "";
+    fleet.innerHTML = `<div class="empty"><b>Een lege hemel</b>Niets binnen ${cfg.radius} km. Over een halve minuut kijken we opnieuw.</div>`;
     return;
   }
-  list.sort((a, b) => b.sp.span - a.sp.span || a.dist - b.dist);
-  // Eén schaal voor alles: het grootste toestel krijgt ongeveer de helft van de breedte, hoogstens 380 px
-  const avail = fleet.clientWidth || 360;
-  const maxSpan = Math.max(...list.map((a) => a.sp.span));
-  const usePhotos = cfg.view !== "silhouet";
-  const narrow = avail < 560;
-  // Met foto's krijgt het grootste toestel meer ruimte; kleine foto's houden een minimumbreedte en de oranje lat toont dan de echte maat
-  const k = (usePhotos ? (narrow ? avail * 0.9 : Math.min(520, avail * 0.6)) : (narrow ? avail * 0.46 : Math.min(380, avail * 0.48))) / maxSpan; // px per meter
-  const minW = narrow ? (avail - 12) / 2 : 210;
-  const ten = 10 * k;
-  $("scalebar").innerHTML = `<i style="width:${ten.toFixed(1)}px"></i>10 m · alle toestellen op dezelfde schaal`;
-  $("board").style.setProperty("--grid", `${ten.toFixed(1)}px`);
+  // Groot naar klein, maar afwisselend gelegd zodat de prent niet als een lijst oogt
+  list.sort((a, b) => b.sp.span - a.sp.span);
+  const order = [];
+  list.forEach((a, i) => (i % 2 ? order.push(a) : order.unshift(a)));
+  const big = order.splice(order.indexOf(list[0]), 1)[0];
+  order.unshift(big);
 
-  fleet.innerHTML = list.map((a) => {
-    const [tk, tl] = trend(a);
+  const html = (k) => order.map((a) => {
+    // Een foto toont het toestel op ongeveer 75% van de beeldbreedte; silhouetten tekenen we op de romplengte
+    const w = Math.max(90, a.sp.span * k);
+    const s = Math.max(0.85, Math.min(1.35, w / 260));
     const name = a.callsign || a.reg || a.hex.toUpperCase();
-    const airline = a.airline || a.operator;
-    const spanTxt = a.sp.span.toFixed(1).replace(".", ",").replace(",0", "") + " m";
-    const fitK = (bw) => Math.min((bw * 0.82) / (a.sp.span + 1.2), (bw * 0.56) / (Math.max(a.sp.len, a.sp.shape === "heli" ? a.sp.span : 0) + 1.2));
-    const w = usePhotos ? Math.min(avail, Math.max(minW, a.sp.span * k)) : 0;
-    const pic = usePhotos
-      ? `<figure class="photo">${a.photo ? `<img src="${esc(a.photo.src)}" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" loading="lazy" referrerpolicy="no-referrer">${a.photo.by ? `<figcaption>© <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a> · planespotters</figcaption>` : ""}` : `<div class="silbox">${drawPlane(a.sp, fitK(w))}</div>`}</figure>
-         <div class="ruler" title="Spanwijdte op schaal"><i style="width:${(a.sp.span * k).toFixed(1)}px"></i><span>${spanTxt}</span></div>`
-      : drawPlane(a.sp, k);
-    return `<article class="ac${w ? " ph" : ""}"${w ? ` style="width:${w.toFixed(0)}px"` : ""}>
-      ${pic}
-      <div class="card">
-        <div class="cs"><b>${esc(name)}</b><span>${a.dist.toFixed(0)} km</span></div>
-        ${airline ? `<div class="airline">${esc(airline)}</div>` : ""}
-        <div class="model">${esc(a.sp.model)}</div>
-        ${routeHtml(a)}
-        <div class="alt"><span>${altText(a)}</span><span class="trend t-${tk}">${ICON[tk]}${tl}</span></div>
-      </div>
-    </article>`;
+    const img = usePhotos && a.photo
+      ? `<img src="${esc(a.photo.src)}" width="${(w / 0.75).toFixed(0)}" height="${(w / 0.75 / 1.5).toFixed(0)}" style="aspect-ratio:3/2;object-fit:cover" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" referrerpolicy="no-referrer" loading="lazy">`
+      : side(a.sp, w * Math.min(1.1, a.sp.len / a.sp.span));
+    return `<figure class="ac" style="--s:${s.toFixed(2)};margin:0">
+      ${img}
+      <figcaption class="cap"><b>${esc(name)}</b><i>${esc(a.sp.model)}</i><i>${esc(altLine(a))}</i><i>${esc(routeLine(a))}</i>${usePhotos && a.photo?.by ? `<i class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></i>` : ""}</figcaption>
+    </figure>`;
   }).join("");
+
+  // Schaal zoeken zodat alles op één scherm past (op brede schermen); op een telefoon mag je scrollen
+  const main = $("main");
+  const availW = fleet.parentElement.clientWidth;
+  const maxSpan = list[0].sp.span;
+  let hi = (availW * 0.55) / maxSpan, lo = 1;
+  const fits = () => main.scrollHeight <= main.clientHeight + 1 && fleet.scrollWidth <= availW + 1;
+  if (innerWidth >= 700) {
+    for (let i = 0; i < 9; i++) {
+      const mid = (lo + hi) / 2;
+      fleet.innerHTML = html(mid);
+      if (fits()) lo = mid; else hi = mid;
+    }
+    fleet.innerHTML = html(lo);
+  } else {
+    fleet.innerHTML = html(Math.min(hi, (availW * 0.8) / maxSpan));
+  }
 }
 
 function header() {
-  $("title").textContent = cfg.title || "Wat vliegt er boven ons?";
-  $("where").textContent = `${cfg.place ? cfg.place + " · " : ""}${cfg.lat.toFixed(3).replace(".", ",")}° N, ${cfg.lon.toFixed(3).replace(".", ",")}° O`;
+  $("title").textContent = (cfg.title || "Overhead").toUpperCase();
+  $("radiusTxt").textContent = `BINNEN ${cfg.radius} KM`;
+  $("place").textContent = cfg.place || `${cfg.lat.toFixed(3).replace(".", ",")}° N, ${cfg.lon.toFixed(3).replace(".", ",")}° O`;
   document.title = cfg.title || "Overhead";
+  tick();
+}
+function tick() {
+  const d = new Date();
+  const t = d.toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
+  const day = d.toLocaleDateString("nl-BE", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, "");
+  $("when").textContent = `${t} · ${day}`;
 }
 
 async function load() {
@@ -436,17 +427,9 @@ async function load() {
     if (!r.ok) throw new Error(j.error || "Fout bij ophalen");
     last = j; lastOk = Date.now();
     render(j);
-    setStatus();
   } catch (e) {
-    setStatus(e.message);
-    if (!last) $("fleet").innerHTML = `<div class="empty"><b>Geen verbinding met de bronnen</b>${esc(e.message)} We proberen het over een halve minuut opnieuw.</div>`;
+    if (!last) $("fleet").innerHTML = `<div class="empty"><b>Geen verbinding</b>${esc(e.message)} We proberen het zo opnieuw.</div>`;
   }
-}
-function setStatus(err) {
-  const s = $("status");
-  const t = lastOk ? new Date(lastOk).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" }) : "—";
-  s.className = err ? "live stale" : "live";
-  s.textContent = err ? `laatst bijgewerkt ${t}` : `live · ${t}`;
 }
 
 /* ---------- Instellingen-dialoog ---------- */
@@ -496,6 +479,7 @@ $("f-save").addEventListener("click", () => {
   load();
 });
 
+
 /* Scherm aan houden op een tablet */
 async function wake() { try { await navigator.wakeLock?.request("screen"); } catch (e) {} }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { wake(); load(); } });
@@ -503,6 +487,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) { wa
 let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => last && render(last), 150); });
 header(); load(); wake();
 setInterval(load, 30000);
+setInterval(tick, 15000);
 })();
 </script>
 </body>
