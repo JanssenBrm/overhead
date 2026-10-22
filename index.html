@@ -86,6 +86,39 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
 #f-geo{justify-self:start}
 .hint{font-size:13px;color:var(--muted);margin:0}
+/* Bijzondere toestellen */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:.82em;font-weight:600;letter-spacing:.02em;padding:1px 8px;border-radius:99px;color:#fff;background:var(--c);margin-bottom:1px}
+.badge svg{width:.95em;height:.95em}
+.b-rare{--c:#8a3ffc}.b-new{--c:#d1477a}.b-mil{--c:#56606a}
+.ac.special .cap b{color:var(--c2,inherit)}
+/* Logboek-knop en -venster */
+.logbtn{height:40px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 13px var(--sans);padding:0 14px 0 12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.logbtn:hover{border-color:var(--faint)}
+.logbtn b{font-family:var(--mono);font-weight:500}
+.logbtn svg{width:16px;height:16px;color:var(--muted)}
+#logdlg{width:min(720px,calc(100vw - 24px));max-height:calc(100dvh - 32px)}
+#logdlg .dlg{max-height:calc(100dvh - 32px);overflow:auto}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{background:#f6f7f8;border-radius:12px;padding:10px 12px}
+.stat .v{font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12px;color:var(--muted)}
+.records{display:grid;gap:6px;font-size:14px}
+.records div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.records span:first-child{color:var(--muted)}
+.records span:last-child{text-align:right}
+.loglist{width:100%;border-collapse:collapse;font-size:13px}
+.loglist th{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+.loglist td{padding:7px 8px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.loglist td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.loglist .muted{color:var(--muted)}
+.tablewrap{overflow-x:auto}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.logbtn span{display:none}}
+/* Nachtstand: donker en gedimd, zodat een tablet aan de muur de kamer niet verlicht */
+body.night{--bg:#0b0d10;--ink:#e3e6ea;--muted:#8a929b;--faint:#5b636c;--line:#23282e;color-scheme:dark}
+body.night .page{filter:brightness(.78)}
+body.night .ac svg.illu,body.night .ac img.paint{filter:brightness(.92) drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+body.night .stat,body.night input,body.night select,body.night .results button{background:#14171b}
+body.night .btn{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .credits{font-size:12px;color:var(--faint);border-top:1px solid var(--line);padding-top:12px}
 .credits a{color:inherit}
 .page{height:100%;height:100dvh}main{overflow:hidden}
@@ -101,6 +134,9 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
       <h1 id="title">Nu in de lucht</h1>
     </div>
     <div class="right">
+      <button class="logbtn" id="logbtn" type="button" aria-label="Logboek van vandaag">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h6M8 11h6"/></svg><span>Vandaag</span><b id="logcount">0</b>
+      </button>
       <div class="clock"><div class="t" id="when">—</div><div class="d" id="date"></div></div>
       <button class="gear" id="gear" type="button" aria-label="Instellingen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -111,6 +147,20 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
   <main id="main"><div class="collage" id="fleet"><div class="empty"><b>Luchtruim afluisteren</b>Even geduld.</div></div></main>
 
 </div>
+
+<dialog id="logdlg">
+  <form class="dlg" method="dialog">
+    <h2 id="logtitle">Vandaag gezien</h2>
+    <div class="stats" id="logstats"></div>
+    <div class="records" id="logrecords"></div>
+    <div class="tablewrap"><table class="loglist">
+      <thead><tr><th>Dichtst</th><th>Vlucht</th><th>Toestel</th><th>Route</th><th>Afstand</th></tr></thead>
+      <tbody id="logrows"></tbody>
+    </table></div>
+    <p class="hint">Het logboek houdt bij wat voorbijkomt zolang deze pagina openstaat, op dit toestel. Elk vliegtuig staat er één keer in, op het moment dat het het dichtst bij was.</p>
+    <div class="btns"><button class="btn" value="close" type="submit">Sluiten</button></div>
+  </form>
+</dialog>
 
 <dialog id="dlg">
   <form class="dlg" id="form" method="dialog">
@@ -131,7 +181,10 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
       <input id="f-rad" type="range" min="5" max="100" step="5">
     </label>
     <label class="field">Afbeeldingen
-      <select id="f-view"><option value="schilderij">Schilderijen (Gemini)</option><option value="illustratie">Getekende illustraties</option><option value="foto">Foto's van het toestel</option></select>
+      <select id="f-view"><option value="schilderij">Schilderijen (AI)</option><option value="illustratie">Getekende illustraties</option><option value="foto">Foto's van het toestel</option></select>
+    </label>
+    <label class="field">Nachtstand
+      <select id="f-night"><option value="auto">Automatisch (tussen zonsondergang en zonsopgang)</option><option value="on">Altijd</option><option value="off">Nooit</option></select>
     </label>
     <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
     <p class="hint" id="f-msg"></p>
@@ -419,7 +472,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const nf = new Intl.NumberFormat("nl-BE");
 
 /* ---------- Instellingen: URL-parameters > opgeslagen > standaard ---------- */
-const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40, view: "schilderij" };
+const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40, view: "schilderij", night: "auto" };
 function loadCfg() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
@@ -698,6 +751,103 @@ function cutout(url) {
   return "pending";
 }
 
+/* ---------- Bijzondere toestellen ---------- */
+const RARE = new Set(["A388","B741","B742","B743","B744","B748","B74S","A124","A225","AN12","AN22","IL76","IL62","C17","C5M","B52","E3TF","E3CF","A3ST","A337","DC10","MD11","A342","A343","A345","A346","CONC","DC3","DC6","JU52","SPIT","B17","B29","P51","L188","A306","B703","K35R","KC2","A400","C130","C30J","B762","B764","A310","T204","SU95","U2","F22","B2"]);
+const STAR = '<svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 .8 7.6 4l3.6.5-2.6 2.5.6 3.6L6 8.9 2.8 10.6l.6-3.6L.8 4.5 4.4 4z"/></svg>';
+function badge(a) {
+  if (a.type && RARE.has(a.type)) return ["rare", "zeldzaam"];
+  const h = typeHist[a.type];
+  // "nieuw type": pas zodra het logboek minstens een dag loopt, en alleen het eerste uur na de eerste waarneming
+  if (a.type && h && Date.now() - histSince > 86400e3 && Date.now() - h.first < 3600e3) return ["new", "nieuw type"];
+  if (Illustrate.livery(a, spec(a)).mil) return ["mil", "militair"];
+  return null;
+}
+function badgeHtml(a) { const b = badge(a); return b ? `<span class="badge b-${b[0]}">${b[0] === "mil" ? "" : STAR}${b[1]}</span>` : ""; }
+
+/* ---------- Logboek: één regel per toestel per dag, op het moment van dichtste nadering ---------- */
+const dayKey = (t = new Date()) => t.toLocaleDateString("sv-SE"); // JJJJ-MM-DD in lokale tijd
+function readJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || "null") ?? d; } catch (e) { return d; } }
+function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+let logbook = readJSON("overhead.log", {});
+let typeHist = readJSON("overhead.types", {});
+let histSince = readJSON("overhead.since", 0) || (writeJSON("overhead.since", Date.now()), Date.now());
+function updateLog(list) {
+  const day = dayKey(), now = Date.now();
+  const today = logbook[day] || (logbook[day] = {});
+  for (const a of list) {
+    if (!a.hex) continue;
+    const sp = spec(a), e = today[a.hex];
+    const rec = { cs: a.callsign || a.reg || a.hex.toUpperCase(), type: a.type || "", model: sp.model, len: sp.len,
+      airline: a.airline || a.operator || "", from: a.route?.from?.city || a.route?.from?.iata || "", to: a.route?.to?.city || a.route?.to?.iata || "",
+      dist: a.dist, alt: a.onGround ? 0 : a.alt, t: now, rare: !!(badge(a) && badge(a)[0] === "rare"), mil: !!Illustrate.livery(a, sp).mil };
+    if (!e) {
+      today[a.hex] = { ...rec, maxAlt: rec.alt || 0 };
+      if (a.type) { const h = typeHist[a.type] || (typeHist[a.type] = { first: now, n: 0 }); h.n++; }
+    } else {
+      e.maxAlt = Math.max(e.maxAlt || 0, rec.alt || 0);
+      if (a.dist < e.dist) Object.assign(e, { dist: a.dist, t: now, alt: rec.alt });
+      if (!e.from && rec.from) Object.assign(e, { from: rec.from, to: rec.to });
+      if (!e.airline && rec.airline) e.airline = rec.airline;
+    }
+  }
+  // alleen vandaag en gisteren bewaren
+  const keep = new Set([day, dayKey(new Date(now - 86400e3))]);
+  for (const k of Object.keys(logbook)) if (!keep.has(k)) delete logbook[k];
+  writeJSON("overhead.log", logbook); writeJSON("overhead.types", typeHist);
+  $("logcount").textContent = Object.keys(today).length;
+}
+function openLog() {
+  const today = Object.values(logbook[dayKey()] || {});
+  const hhmm = (t) => new Date(t).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
+  const types = new Set(today.map((e) => e.type).filter(Boolean));
+  const airlines = new Set(today.map((e) => e.airline).filter(Boolean));
+  const special = today.filter((e) => e.rare || e.mil).length;
+  $("logstats").innerHTML = [[today.length, "toestellen"], [types.size, "types"], [airlines.size, "maatschappijen"], [special, "zeldzaam of militair"]]
+    .slice(0, innerWidth < 560 ? 4 : 3).map(([v, l]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+  const pick = (f) => today.reduce((b, e) => (b == null || f(e) > f(b) ? e : b), null);
+  const big = pick((e) => e.len || 0), high = pick((e) => e.maxAlt || 0), close = pick((e) => -e.dist);
+  $("logrecords").innerHTML = today.length ? [
+    ["Grootste", big && `${esc(big.model)} · ${esc(big.cs)}`],
+    ["Hoogste", high && `${nf.format(Math.round((high.maxAlt || 0) / 100) * 100)} ft · ${esc(high.cs)}`],
+    ["Dichtstbij", close && `${close.dist.toFixed(1).replace(".", ",")} km · ${esc(close.cs)} om ${hhmm(close.t)}`],
+  ].map(([l, v]) => `<div><span>${l}</span><span>${v || "—"}</span></div>`).join("") : "";
+  $("logrows").innerHTML = today.sort((a, b) => b.t - a.t).map((e) => `<tr>
+    <td class="n">${hhmm(e.t)}</td>
+    <td><b>${esc(e.cs)}</b>${e.rare ? ` <span class="badge b-rare">${STAR}</span>` : ""}${e.airline ? `<div class="muted">${esc(e.airline)}</div>` : ""}</td>
+    <td>${esc(e.model)}</td>
+    <td class="muted">${e.from ? `${esc(e.from)} → ${esc(e.to)}` : "—"}</td>
+    <td class="n">${e.dist.toFixed(1).replace(".", ",")} km</td></tr>`).join("") || `<tr><td colspan="5" class="muted">Nog niets gelogd vandaag.</td></tr>`;
+  $("logtitle").textContent = `Vandaag gezien · ${new Date().toLocaleDateString("nl-BE", { weekday: "long", day: "numeric", month: "long" })}`;
+  $("logdlg").showModal();
+}
+$("logbtn").addEventListener("click", openLog);
+{ const t = logbook[dayKey()]; $("logcount").textContent = t ? Object.keys(t).length : 0; }
+
+/* ---------- Nachtstand volgens zonsopgang en -ondergang op de ingestelde plek ---------- */
+function sunTimes(date, lat, lon) { // lon = westerlengte, positief naar het westen
+  const r = Math.PI / 180, J = date.getTime() / 86400000 + 2440587.5;
+  const n = Math.ceil(J - 2451545.0009 - lon / 360), Js = 2451545.0009 + lon / 360 + n;
+  const M = (357.5291 + 0.98560028 * (Js - 2451545)) % 360;
+  const C = 1.9148 * Math.sin(M * r) + 0.02 * Math.sin(2 * M * r) + 0.0003 * Math.sin(3 * M * r);
+  const L = (M + C + 180 + 102.9372) % 360;
+  const Jt = Js + 0.0053 * Math.sin(M * r) - 0.0069 * Math.sin(2 * L * r);
+  const dec = Math.asin(Math.sin(L * r) * Math.sin(23.44 * r));
+  const cosw = (Math.sin(-0.833 * r) - Math.sin(lat * r) * Math.sin(dec)) / (Math.cos(lat * r) * Math.cos(dec));
+  if (cosw > 1) return { rise: null, set: null, polar: "night" };
+  if (cosw < -1) return { rise: null, set: null, polar: "day" };
+  const w = Math.acos(cosw) / r / 360, toDate = (j) => new Date((j - 2440587.5) * 86400000);
+  return { rise: toDate(Jt - w), set: toDate(Jt + w) };
+}
+function applyNight() {
+  let on = cfg.night === "on";
+  if (cfg.night !== "on" && cfg.night !== "off") {
+    const now = new Date(), s = sunTimes(now, cfg.lat, -cfg.lon); // de formule verwacht westerlengte positief
+    on = s.polar ? s.polar === "night" : (now < new Date(s.rise.getTime() - 20 * 60e3) || now > new Date(s.set.getTime() + 20 * 60e3));
+  }
+  document.body.classList.toggle("night", on);
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", on ? "#0b0d10" : "#ffffff");
+}
+
 /* ---------- De prent ---------- */
 let last = null, lastOk = 0;
 const shown = new Set(); // toestellen die al op het scherm stonden, zodat alleen nieuwe invloeien
@@ -734,7 +884,7 @@ function render(data) {
       : Illustrate.draw(a, a.sp, Math.max(k, minW / a.sp.len));
     return `<figure class="ac${shown.has(a.hex) ? "" : " new"}" style="--s:${s.toFixed(2)};margin:0">
       ${img}
-      <figcaption class="cap"><b>${esc(name)}</b><span class="model">${esc(a.sp.model)}</span><span class="route">${esc(routeLine(a))}</span><span class="meta">${a.onGround || a.alt == null ? "" : `<span class="alt">${nf.format(Math.round(a.alt / 25) * 25)} ft</span>`}${trendPill(a)}</span>${usePhotos && a.photo?.by ? `<span class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></span>` : ""}</figcaption>
+      <figcaption class="cap">${badgeHtml(a)}<b>${esc(name)}</b><span class="model">${esc(a.sp.model)}</span><span class="route">${esc(routeLine(a))}</span><span class="meta">${a.onGround || a.alt == null ? "" : `<span class="alt">${nf.format(Math.round(a.alt / 25) * 25)} ft</span>`}${trendPill(a)}</span>${usePhotos && a.photo?.by ? `<span class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></span>` : ""}</figcaption>
     </figure>`;
   }).join("");
 
@@ -777,6 +927,7 @@ async function load() {
     if (!r.ok) throw new Error(j.error || "Fout bij ophalen");
     last = j; lastOk = Date.now();
     render(j);
+    updateLog(j.aircraft);
   } catch (e) {
     if (!last) $("fleet").innerHTML = `<div class="empty"><b>Geen verbinding</b>${esc(e.message)} We proberen het zo opnieuw.</div>`;
   }
@@ -786,7 +937,7 @@ async function load() {
 const dlg = $("dlg");
 function openSettings() {
   $("f-title").value = cfg.title; $("f-lat").value = cfg.lat; $("f-lon").value = cfg.lon;
-  $("f-rad").value = cfg.radius; $("f-view").value = cfg.view; $("f-radv").textContent = cfg.radius + " km";
+  $("f-rad").value = cfg.radius; $("f-view").value = cfg.view; $("f-night").value = cfg.night || "auto"; $("f-radv").textContent = cfg.radius + " km";
   $("f-search").value = cfg.place || ""; $("results").innerHTML = ""; $("f-msg").textContent = "";
   dlg.showModal();
 }
@@ -822,8 +973,8 @@ $("f-geo").addEventListener("click", () => {
 $("f-save").addEventListener("click", () => {
   const lat = parseFloat(String($("f-lat").value).replace(",", ".")), lon = parseFloat(String($("f-lon").value).replace(",", "."));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { $("f-msg").textContent = "Vul een geldige breedte- en lengtegraad in."; return; }
-  cfg = { title: $("f-title").value.trim(), place: pendingPlace || "", lat, lon, radius: +$("f-rad").value, view: $("f-view").value };
-  saveCfg(); header(); dlg.close(); last = null;
+  cfg = { title: $("f-title").value.trim(), place: pendingPlace || "", lat, lon, radius: +$("f-rad").value, view: $("f-view").value, night: $("f-night").value };
+  saveCfg(); header(); applyNight(); dlg.close(); last = null;
   $("fleet").innerHTML = `<div class="empty"><b>Luchtruim afluisteren…</b>Even geduld.</div>`;
   history.replaceState(null, "", location.pathname);
   load();
@@ -835,7 +986,8 @@ async function wake() { try { await navigator.wakeLock?.request("screen"); } cat
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { wake(); load(); } });
 
 let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => last && render(last), 150); });
-header(); load(); wake();
+header(); applyNight(); load(); wake();
+setInterval(applyNight, 60000);
 setInterval(load, 30000);
 setInterval(tick, 15000);
 })();

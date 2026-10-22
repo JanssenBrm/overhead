@@ -16,6 +16,12 @@ https://<jouw-site>/?lat=51.2387&lon=5.1159&plaats=Dessel&straal=40&titel=Boven%
 
 Op een tablet houdt de pagina het scherm wakker (waar de browser dat toelaat) en ververst ze elke 30 seconden.
 
+Extra's:
+
+- **Bijzondere toestellen** krijgen een label: *zeldzaam* (A380, 747, Beluga, transportvliegtuigen en meer), *nieuw type* (het eerste uur nadat een type voor het eerst boven je plek vloog, zodra het logboek een dag loopt) en *militair*.
+- **Logboek van vandaag** achter de knop *Vandaag*: aantal toestellen, types en maatschappijen, de grootste, hoogste en dichtstbijzijnde, en een lijst met het moment van dichtste nadering. Het wordt in de browser bijgehouden zolang de pagina openstaat.
+- **Nachtstand**: tussen zonsondergang en zonsopgang op de ingestelde plek wordt de pagina donker en gedimd. Instelbaar op automatisch, altijd of nooit.
+
 ## Hoe het werkt
 
 - `index.html`: de volledige pagina inclusief de tekencode voor de illustraties, zonder build-stap.
