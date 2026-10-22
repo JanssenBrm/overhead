@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
 <title>Overhead</title>
-<meta name="description" content="Wat vliegt er nu boven je huis, op schaal van de spanwijdte.">
+<meta name="description" content="Wat vliegt er nu boven je huis, op schaal van de lengte van elk toestel.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -2 40 40'%3E%3Cpath fill='%23111316' d='M0 0c1.5 1 1.6 4 1.6 12L19 20v3L1.6 19v10l5 3v2L0 32.6-6.6 34v-2l5-3V19L-19 23v-3l17.4-8C-1.6 4-1.5 1 0 0z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: een wit vel. Bovenaan plaats en straal links, een grote klok rechts. Daaronder de toestellen in zijaanzicht,
-   breedte volgens spanwijdte, met een strak bijschrift. Past zich aan tot alles op één scherm staat. */
+   op schaal van hun lengte, met een strak bijschrift. Past zich aan tot alles op één scherm staat. */
 :root{
   --bg:#ffffff;
   --ink:#111316;
@@ -111,7 +111,7 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
 
   <main id="main"><div class="collage" id="fleet"><div class="empty"><b>Luchtruim afluisteren</b>Even geduld.</div></div></main>
 
-  <footer><span id="place">0 toestellen</span><span>Posities <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> · routes <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · breedte volgens spanwijdte</span></footer>
+  <footer><span id="place">0 toestellen</span><span>Posities <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> · routes <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · op schaal van de lengte</span></footer>
 </div>
 
 <dialog id="dlg">
@@ -715,7 +715,7 @@ function render(data) {
     return;
   }
   // Groot naar klein, maar afwisselend gelegd zodat de prent niet als een lijst oogt
-  list.sort((a, b) => b.sp.span - a.sp.span);
+  list.sort((a, b) => b.sp.len - a.sp.len);
   const order = [];
   list.forEach((a, i) => (i % 2 ? order.push(a) : order.unshift(a)));
   const big = order.splice(order.indexOf(list[0]), 1)[0];
@@ -723,7 +723,7 @@ function render(data) {
 
   const html = (k) => order.map((a) => {
     // Een foto toont het toestel op ongeveer 75% van de beeldbreedte; silhouetten tekenen we op de romplengte
-    const w = Math.max(minW, a.sp.span * k);
+    const w = Math.max(minW, a.sp.len * k); // in zijaanzicht is de lengte wat je ziet
     const s = Math.max(narrow ? 0.78 : 0.85, Math.min(1.35, w / 260));
     const name = a.callsign || a.reg || a.hex.toUpperCase();
     const pUrl = usePaint ? paints.get(paintKey(a)) : null;
@@ -732,7 +732,7 @@ function render(data) {
       ? `<img class="paint" src="${esc(paint.src)}" width="${w.toFixed(0)}" height="${(w * paint.h / paint.w).toFixed(0)}" alt="${esc(a.sp.model)}">`
       : usePhotos && a.photo
       ? `<img class="photo" src="${esc(a.photo.src)}" width="${(w / 0.75).toFixed(0)}" height="${(w / 0.75 / 1.5).toFixed(0)}" style="aspect-ratio:3/2;object-fit:cover" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" referrerpolicy="no-referrer" loading="lazy">`
-      : Illustrate.draw(a, a.sp, Math.max(k, minW / a.sp.span));
+      : Illustrate.draw(a, a.sp, Math.max(k, minW / a.sp.len));
     return `<figure class="ac${shown.has(a.hex) ? "" : " new"}" style="--s:${s.toFixed(2)};margin:0">
       ${img}
       <figcaption class="cap"><b>${esc(name)}</b><span class="model">${esc(a.sp.model)}</span><span class="route">${esc(routeLine(a))}</span><span class="meta">${a.onGround || a.alt == null ? "" : `<span class="alt">${nf.format(Math.round(a.alt / 25) * 25)} ft</span>`}${trendPill(a)}</span>${usePhotos && a.photo?.by ? `<span class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></span>` : ""}</figcaption>
@@ -742,8 +742,8 @@ function render(data) {
   // Schaal zoeken zodat alles op één scherm past (op brede schermen); op een telefoon mag je scrollen
   const main = $("main");
   const availW = fleet.parentElement.clientWidth;
-  const maxSpan = list[0].sp.span;
-  let hi = (availW * (narrow ? 0.92 : 0.55)) / maxSpan, lo = 0.3;
+  const maxLen = list[0].sp.len;
+  let hi = (availW * (narrow ? 0.92 : 0.55)) / maxLen, lo = 0.3;
   const fits = () => main.scrollHeight <= main.clientHeight + 1 && fleet.scrollWidth <= availW + 1;
   {
     for (let i = 0; i < 9; i++) {
