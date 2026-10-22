@@ -1,6 +1,7 @@
 // GET /api/painting?type=A320&op=BEL&airline=Brussels%20Airlines&model=Airbus%20A320
-// Eén schilderij per combinatie van type en maatschappij, één keer gemaakt met Gemini en daarna bewaard in Vercel Blob.
-// Werkt pas als GEMINI_API_KEY en BLOB_READ_WRITE_TOKEN ingesteld zijn; anders antwoordt het met url: null.
+// Eén schilderij per combinatie van type en maatschappij, één keer gemaakt en daarna bewaard in Vercel Blob.
+// Bron: Cloudflare Workers AI (gratis) als CLOUDFLARE_ACCOUNT_ID en CLOUDFLARE_API_TOKEN bestaan, anders Gemini (GEMINI_API_KEY).
+// Zonder bron of zonder BLOB_READ_WRITE_TOKEN antwoordt het met url: null.
 import { list, put } from "@vercel/blob";
 
 const MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-nano-banana-2.1";
@@ -28,6 +29,21 @@ async function paintedToday() {
   } while (cursor);
   return n;
 }
+
+// Gratis alternatief: Cloudflare Workers AI met FLUX.1 [schnell] (10.000 neurons per dag gratis)
+async function cloudflare(prompt) {
+  const acc = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${acc}/ai/run/@cf/black-forest-labs/flux-1-schnell`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: prompt.slice(0, 2000), steps: 6 }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j?.result?.image) throw new Error(`Cloudflare ${r.status}: ${j?.errors?.[0]?.message || "geen beeld"}`);
+  return { buf: Buffer.from(j.result.image, "base64"), mime: "image/jpeg" };
+}
+
+const useCloudflare = () => !!(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);
 
 async function gemini(prompt) {
   const body = JSON.stringify({
@@ -60,7 +76,7 @@ export default async function handler(req, res) {
     res.status(400).json({ error: "Ongeldig type of maatschappij." });
     return;
   }
-  if (!process.env.GEMINI_API_KEY || !process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!(useCloudflare() || process.env.GEMINI_API_KEY) || !process.env.BLOB_READ_WRITE_TOKEN) {
     res.setHeader("Cache-Control", "public, s-maxage=300");
     res.status(200).json({ url: null, reason: "not-configured" });
     return;
@@ -89,7 +105,7 @@ export default async function handler(req, res) {
           `the whole aircraft in frame with generous margin, landing gear retracted. Painted as ${STYLE}. ` +
           `Isolated on a completely plain pure white background: no sky, no clouds, no ground, no shadow, no frame, no border, ` +
           `no text, no lettering, no registration, no logos.`;
-        const img = await gemini(prompt);
+        const img = useCloudflare() ? await cloudflare(prompt) : await gemini(prompt);
         const blob = await put(key, img.buf, { access: "public", contentType: img.mime, addRandomSuffix: false });
         return { url: blob.url };
       })().finally(() => setTimeout(() => busy.delete(key), 1000)));
