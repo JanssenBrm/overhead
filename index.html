@@ -51,6 +51,7 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding-block
 .collage{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:var(--gy,18px) var(--gx,26px);max-width:100%}
 .ac{display:flex;flex-direction:column;align-items:center;max-width:100%;text-align:center}
 .ac img,.ac svg{display:block;max-width:100%;height:auto}
+.ac svg.illu{overflow:visible;filter:drop-shadow(0 calc(var(--s,1)*3px) calc(var(--s,1)*4px) rgba(0,0,0,.12))}
 .ac img{
   -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 54%,#000 52%,transparent 100%);
           mask-image:radial-gradient(ellipse 62% 58% at 50% 54%,#000 52%,transparent 100%);
@@ -103,7 +104,7 @@ select{background:var(--paper)}
 
   <main id="main"><div class="collage" id="fleet"><div class="empty"><b>Het luchtruim wordt afgeluisterd</b>Een ogenblik geduld.</div></div></main>
 
-  <footer><span id="place">Dessel</span><span>Posities <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> · routes <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · foto's <a href="https://www.planespotters.net" target="_blank" rel="noopener">planespotters.net</a> · breedte volgens spanwijdte</span></footer>
+  <footer><span id="place">Dessel</span><span>Posities <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> · routes <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · foto's <a href="https://www.planespotters.net" target="_blank" rel="noopener">planespotters.net</a> · getekend op schaal</span></footer>
 </div>
 
 <dialog id="dlg">
@@ -125,7 +126,7 @@ select{background:var(--paper)}
       <input id="f-rad" type="range" min="5" max="100" step="5">
     </label>
     <label class="field">Afbeeldingen
-      <select id="f-view"><option value="foto">Foto's van het toestel</option><option value="silhouet">Getekende silhouetten</option></select>
+      <select id="f-view"><option value="illustratie">Getekende illustraties</option><option value="foto">Foto's van het toestel</option></select>
     </label>
     <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
     <p class="hint" id="f-msg"></p>
@@ -136,6 +137,7 @@ select{background:var(--paper)}
   </form>
 </dialog>
 
+<script src="/illustrate.js"></script>
 <script>
 (() => {
 const $ = (id) => document.getElementById(id);
@@ -143,7 +145,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const nf = new Intl.NumberFormat("nl-BE");
 
 /* ---------- Instellingen: URL-parameters > opgeslagen > standaard ---------- */
-const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40, view: "foto" };
+const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40, view: "illustratie" };
 function loadCfg() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
@@ -152,7 +154,7 @@ function loadCfg() {
   if (p.has("lat") && p.has("lon")) { cfg.lat = +p.get("lat"); cfg.lon = +p.get("lon"); cfg.place = p.get("plaats") || ""; }
   if (p.has("straal")) cfg.radius = +p.get("straal");
   if (p.has("titel")) cfg.title = p.get("titel");
-  if (p.has("weergave")) cfg.view = p.get("weergave") === "silhouet" ? "silhouet" : "foto";
+  if (p.has("weergave")) cfg.view = p.get("weergave") === "foto" ? "foto" : "illustratie";
   return cfg;
 }
 let cfg = loadCfg();
@@ -282,28 +284,6 @@ function drawPlane(sp, k) {
 }
 
 
-/* ---------- Zijaanzicht als potloodsilhouet (als er geen foto is) ---------- */
-function side(sp, widthPx) {
-  const L = sp.len, H = L * 0.42, fh = L * 0.1;
-  const y = H * 0.55; // romp-as
-  let d = "", extra = "";
-  if (sp.shape === "heli") {
-    d = `<ellipse cx="${L*0.3}" cy="${y}" rx="${L*0.22}" ry="${fh*1.4}"/><path d="M${L*0.45} ${y-fh*0.4} L${L*0.95} ${y-fh*0.6} L${L*0.95} ${y-fh*0.2} L${L*0.45} ${y+fh*0.3}Z"/><path d="M${L*0.9} ${y-fh*1.8} L${L} ${y-fh*1.8} L${L*0.97} ${y-fh*0.2} L${L*0.92} ${y-fh*0.2}Z"/>`;
-    extra = `<path d="M${L*0.3 - sp.span/2} ${y-fh*2.1} L${L*0.3 + sp.span/2} ${y-fh*2.1}" stroke="currentColor" stroke-width="${fh*0.18}"/><path d="M${L*0.3} ${y-fh*2.1} L${L*0.3} ${y-fh*1.3}" stroke="currentColor" stroke-width="${fh*0.25}"/>`;
-  } else {
-    const nose = fh * 1.3, tailUp = sp.shape === "ga" ? fh * 1.6 : fh * 2.1;
-    d = `<path d="M0 ${y} C0 ${y-fh*0.55} ${nose*0.4} ${y-fh/2} ${nose} ${y-fh/2} L${L*0.8} ${y-fh/2} L${L} ${y-fh*0.35} L${L} ${y-fh*0.1} L${L*0.8} ${y+fh*0.25} L${nose} ${y+fh/2} C${nose*0.3} ${y+fh/2} 0 ${y+fh*0.3} 0 ${y}Z"/>`;
-    d += `<path d="M${L*0.8} ${y-fh/2} L${L*0.93} ${y-fh/2-tailUp} L${L*0.99} ${y-fh/2-tailUp} L${L} ${y-fh*0.35}Z"/>`;
-    d += `<path d="M${L*0.4} ${y+fh*0.2} L${L*0.62} ${y+fh*0.35} L${L*0.62} ${y+fh*0.5} L${L*0.4} ${y+fh*0.45}Z" opacity=".7"/>`;
-    if (sp.shape === "jet" || sp.shape === "jet4") extra = `<ellipse cx="${L*0.4}" cy="${y+fh*0.75}" rx="${L*0.07}" ry="${fh*0.3}" opacity=".85"/>`;
-    if (sp.shape === "tail") extra = `<ellipse cx="${L*0.74}" cy="${y-fh*0.55}" rx="${L*0.07}" ry="${fh*0.28}" opacity=".85"/>`;
-    if (sp.shape === "prop" || sp.shape === "prop4") extra = `<ellipse cx="${L*0.36}" cy="${y-fh*0.3}" rx="${L*0.08}" ry="${fh*0.25}" opacity=".85"/><path d="M${L*0.28} ${y-fh*1.5} L${L*0.28} ${y+fh*0.9}" stroke="currentColor" stroke-width="${fh*0.06}"/>`;
-    if (sp.shape === "ga") extra = `<path d="M${-fh*0.1} ${y-fh*1.3} L${-fh*0.1} ${y+fh*1.3}" stroke="currentColor" stroke-width="${fh*0.08}"/>`;
-  }
-  const pad = L * 0.06;
-  return `<svg width="${widthPx.toFixed(0)}" viewBox="${-pad} ${-pad} ${L + pad*2} ${H + pad*2}" style="color:var(--ghost)" role="img" aria-label="${esc(sp.model)}"><g fill="currentColor">${d}${extra}</g></svg>`;
-}
-
 /* ---------- Bijschrift ---------- */
 function motion(a) {
   if (a.onGround) return "aan de grond";
@@ -360,7 +340,7 @@ async function fetchPhoto(hex) {
 let last = null, lastOk = 0;
 function render(data) {
   const fleet = $("fleet");
-  const usePhotos = cfg.view !== "silhouet";
+  const usePhotos = cfg.view === "foto";
   const list = (data?.aircraft || []).map((a) => ({ ...a, sp: spec(a), photo: photos.get(a.hex) || null }));
   if (usePhotos) list.forEach((a) => queuePhoto(a.hex));
   if (!list.length) {
@@ -376,12 +356,12 @@ function render(data) {
 
   const html = (k) => order.map((a) => {
     // Een foto toont het toestel op ongeveer 75% van de beeldbreedte; silhouetten tekenen we op de romplengte
-    const w = Math.max(90, a.sp.span * k);
+    const w = Math.max(70, a.sp.span * k);
     const s = Math.max(0.85, Math.min(1.35, w / 260));
     const name = a.callsign || a.reg || a.hex.toUpperCase();
     const img = usePhotos && a.photo
       ? `<img src="${esc(a.photo.src)}" width="${(w / 0.75).toFixed(0)}" height="${(w / 0.75 / 1.5).toFixed(0)}" style="aspect-ratio:3/2;object-fit:cover" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" referrerpolicy="no-referrer" loading="lazy">`
-      : side(a.sp, w * Math.min(1.1, a.sp.len / a.sp.span));
+      : Illustrate.draw(a, a.sp, Math.max(k * (a.sp.span / a.sp.len), 70 / a.sp.len));
     return `<figure class="ac" style="--s:${s.toFixed(2)};margin:0">
       ${img}
       <figcaption class="cap"><b>${esc(name)}</b><i>${esc(a.sp.model)}</i><i>${esc(altLine(a))}</i><i>${esc(routeLine(a))}</i>${usePhotos && a.photo?.by ? `<i class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></i>` : ""}</figcaption>
