@@ -10,6 +10,8 @@ const STYLE =
   process.env.PAINT_STYLE ||
   "a detailed gouache painting in the manner of a 1960s airline travel poster, soft brush texture, gentle shading, a fine dark contour line around the whole aircraft";
 const PREFIX = "paintings/v1/";
+// De opslag is privé: beelden gaan via /api/painting-img, die ze uit Blob leest
+const imgUrl = (key) => `/api/painting-img?key=${encodeURIComponent(key.slice(PREFIX.length, -4))}`;
 const busy = new Map(); // sleutel -> lopende belofte, zodat één instantie niet twee keer hetzelfde schildert
 
 const clean = (s, max) => String(s || "").replace(/[^\p{L}\p{N} .,&'()\-\/]/gu, "").slice(0, max).trim();
@@ -86,7 +88,7 @@ export default async function handler(req, res) {
     const hit = await existing(key);
     if (hit) {
       res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
-      res.status(200).json({ url: hit.url });
+      res.status(200).json({ url: imgUrl(key) });
       return;
     }
     if (!busy.has(key)) {
@@ -106,8 +108,8 @@ export default async function handler(req, res) {
           `Isolated on a completely plain pure white background: no sky, no clouds, no ground, no shadow, no frame, no border, ` +
           `no text, no lettering, no registration, no logos.`;
         const img = useCloudflare() ? await cloudflare(prompt) : await gemini(prompt);
-        const blob = await put(key, img.buf, { access: "public", contentType: img.mime, addRandomSuffix: false });
-        return { url: blob.url };
+        await put(key, img.buf, { access: "private", contentType: img.mime, addRandomSuffix: false, allowOverwrite: true });
+        return { url: imgUrl(key) };
       })().finally(() => setTimeout(() => busy.delete(key), 1000)));
     }
     const out = await busy.get(key);
