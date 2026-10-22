@@ -341,11 +341,45 @@ function routeHtml(a) {
   return `<div class="route">${esc(f.iata)} → ${esc(t.iata)}<small>${esc(f.city || "")} naar ${esc(t.city || "")}</small></div>`;
 }
 
+/* ---------- Foto's: eerst rechtstreeks vanuit de browser, anders via onze server ---------- */
+const photos = new Map(); // hex -> foto-object of null (geen foto)
+try { const c = JSON.parse(localStorage.getItem("overhead.photos") || "{}"); const now = Date.now();
+  for (const [h, v] of Object.entries(c)) if (now - v.at < 3 * 86400e3) photos.set(h, v.p); } catch (e) {}
+function persistPhotos() { try { const o = {}, now = Date.now(); let n = 0;
+  for (const [h, p] of [...photos].slice(-400)) { o[h] = { at: now, p }; n++; }
+  localStorage.setItem("overhead.photos", JSON.stringify(o)); } catch (e) {} }
+const pq = [], inQ = new Set(); let active = 0, direct = true, reRenderT;
+function queuePhoto(hex) { if (photos.has(hex) || inQ.has(hex)) return; inQ.add(hex); pq.push(hex); pump(); }
+function pump() {
+  while (active < 2 && pq.length) {
+    const hex = pq.shift(); active++;
+    fetchPhoto(hex).then((p) => {
+      if (p !== undefined) { photos.set(hex, p); persistPhotos(); }
+      clearTimeout(reRenderT); reRenderT = setTimeout(() => last && render(last), 250);
+    }).finally(() => { active--; inQ.delete(hex); setTimeout(pump, 150); });
+  }
+}
+async function fetchPhoto(hex) {
+  const shape = (ph) => { const b = ph && (ph.thumbnail_large || ph.thumbnail); return b?.src ? { src: b.src, by: ph.photographer, link: ph.link } : null; };
+  if (direct) {
+    try {
+      const r = await fetch(`https://api.planespotters.net/pub/photos/hex/${hex}`);
+      if (r.ok) return shape((await r.json())?.photos?.[0]);
+    } catch (e) { direct = false; } // CORS of geblokkeerd: vanaf nu via de server
+  }
+  try {
+    const r = await fetch(`/api/photo?hex=${hex}`);
+    if (r.ok) return (await r.json()).photo;
+  } catch (e) {}
+  return undefined; // onbekend, later opnieuw proberen
+}
+
 /* ---------- Tekenen ---------- */
 let last = null, lastOk = 0;
 function render(data) {
   const fleet = $("fleet");
-  const list = (data?.aircraft || []).map((a) => ({ ...a, sp: spec(a) }));
+  const list = (data?.aircraft || []).map((a) => ({ ...a, sp: spec(a), photo: photos.get(a.hex) || null }));
+  if (cfg.view !== "silhouet") list.forEach((a) => queuePhoto(a.hex));
   $("count").textContent = data ? `${list.length} toestel${list.length === 1 ? "" : "len"} binnen ${cfg.radius} km` : "";
   if (!list.length) {
     fleet.innerHTML = `<div class="empty"><b>Het luchtruim is even leeg</b>Niets binnen ${cfg.radius} km. Over een minuut kijken we opnieuw.</div>`;
@@ -356,10 +390,10 @@ function render(data) {
   // Eén schaal voor alles: het grootste toestel krijgt ongeveer de helft van de breedte, hoogstens 380 px
   const avail = fleet.clientWidth || 360;
   const maxSpan = Math.max(...list.map((a) => a.sp.span));
-  const photos = cfg.view !== "silhouet";
+  const usePhotos = cfg.view !== "silhouet";
   const narrow = avail < 560;
   // Met foto's krijgt het grootste toestel meer ruimte; kleine foto's houden een minimumbreedte en de oranje lat toont dan de echte maat
-  const k = (photos ? (narrow ? avail * 0.9 : Math.min(520, avail * 0.6)) : (narrow ? avail * 0.46 : Math.min(380, avail * 0.48))) / maxSpan; // px per meter
+  const k = (usePhotos ? (narrow ? avail * 0.9 : Math.min(520, avail * 0.6)) : (narrow ? avail * 0.46 : Math.min(380, avail * 0.48))) / maxSpan; // px per meter
   const minW = narrow ? (avail - 12) / 2 : 210;
   const ten = 10 * k;
   $("scalebar").innerHTML = `<i style="width:${ten.toFixed(1)}px"></i>10 m · alle toestellen op dezelfde schaal`;
@@ -371,8 +405,8 @@ function render(data) {
     const airline = a.airline || a.operator;
     const spanTxt = a.sp.span.toFixed(1).replace(".", ",").replace(",0", "") + " m";
     const fitK = (bw) => Math.min((bw * 0.82) / (a.sp.span + 1.2), (bw * 0.56) / (Math.max(a.sp.len, a.sp.shape === "heli" ? a.sp.span : 0) + 1.2));
-    const w = photos ? Math.min(avail, Math.max(minW, a.sp.span * k)) : 0;
-    const pic = photos
+    const w = usePhotos ? Math.min(avail, Math.max(minW, a.sp.span * k)) : 0;
+    const pic = usePhotos
       ? `<figure class="photo">${a.photo ? `<img src="${esc(a.photo.src)}" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" loading="lazy" referrerpolicy="no-referrer">${a.photo.by ? `<figcaption>© <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a> · planespotters</figcaption>` : ""}` : `<div class="silbox">${drawPlane(a.sp, fitK(w))}</div>`}</figure>
          <div class="ruler" title="Spanwijdte op schaal"><i style="width:${(a.sp.span * k).toFixed(1)}px"></i><span>${spanTxt}</span></div>`
       : drawPlane(a.sp, k);
