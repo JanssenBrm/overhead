@@ -18,7 +18,7 @@ Op een tablet houdt de pagina het scherm wakker (waar de browser dat toelaat) en
 
 ## Hoe het werkt
 
-- `index.html`: de volledige pagina, zonder build-stap.
+- `index.html`: de volledige pagina inclusief de tekencode voor de illustraties, zonder build-stap.
 - `api/aircraft.js`: Vercel-functie die posities ophaalt bij [adsb.lol](https://adsb.lol) (met [adsb.fi](https://adsb.fi) als reserve) en routes aanvult via [adsbdb](https://www.adsbdb.com).
 - `api/geocode.js`: plaatsnamen zoeken via [Open-Meteo](https://open-meteo.com).
 
