@@ -26,7 +26,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+body{background:linear-gradient(180deg,var(--sky1,var(--bg)) 0%,var(--sky2,var(--bg)) 100%) fixed;background-color:var(--bg);transition:background .2s;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .page{min-height:100%;display:flex;flex-direction:column;max-width:1600px;margin:0 auto;
   padding-block:clamp(16px,3.2vh,40px) clamp(12px,2.4vh,28px);
@@ -99,6 +99,7 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
 #logdlg{width:min(720px,calc(100vw - 24px));max-height:calc(100dvh - 32px)}
 #logdlg .dlg{max-height:calc(100dvh - 32px);overflow:auto}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.wx{text-transform:none;letter-spacing:.02em}
 .stat{background:#f6f7f8;border-radius:12px;padding:10px 12px}
 .stat .v{font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .stat .l{font-size:12px;color:var(--muted)}
@@ -114,7 +115,7 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
 .tablewrap{overflow-x:auto}
 @media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.logbtn span{display:none}}
 /* Nachtstand: donker en gedimd, zodat een tablet aan de muur de kamer niet verlicht */
-body.night{--bg:#0b0d10;--ink:#e3e6ea;--muted:#8a929b;--faint:#5b636c;--line:#23282e;color-scheme:dark}
+body.night{--sky1:#0a1430;--sky2:#141d36;--bg:#0b0d10;--ink:#e3e6ea;--muted:#8a929b;--faint:#5b636c;--line:#23282e;color-scheme:dark}
 body.night .page{filter:brightness(.78)}
 body.night .ac svg.illu,body.night .ac img.paint{filter:brightness(.92) drop-shadow(0 4px 6px rgba(0,0,0,.4))}
 body.night .stat,body.night input,body.night select,body.night .results button{background:#14171b}
@@ -130,7 +131,7 @@ body.night .btn{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 <div class="page">
   <header>
     <div>
-      <div class="eyebrow"><span class="dot" aria-hidden="true"></span><span id="radiusTxt">Dessel · 40 km</span></div>
+      <div class="eyebrow"><span class="dot" aria-hidden="true"></span><span id="radiusTxt">Dessel · 40 km</span><span class="wx" id="wx"></span></div>
       <h1 id="title">Nu in de lucht</h1>
     </div>
     <div class="right">
@@ -183,8 +184,8 @@ body.night .btn{background:var(--ink);color:var(--bg);border-color:var(--ink)}
     <label class="field">Afbeeldingen
       <select id="f-view"><option value="schilderij">Schilderijen (AI)</option><option value="illustratie">Getekende illustraties</option><option value="foto">Foto's van het toestel</option></select>
     </label>
-    <label class="field">Nachtstand
-      <select id="f-night"><option value="auto">Automatisch (tussen zonsondergang en zonsopgang)</option><option value="on">Altijd</option><option value="off">Nooit</option></select>
+    <label class="field">Achtergrond
+      <select id="f-night"><option value="auto">Hemel van nu (kleurt mee met uur en weer, donker 's nachts)</option><option value="off">Altijd wit</option><option value="on">Altijd donker</option></select>
     </label>
     <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
     <p class="hint" id="f-msg"></p>
@@ -838,14 +839,46 @@ function sunTimes(date, lat, lon) { // lon = westerlengte, positief naar het wes
   const w = Math.acos(cosw) / r / 360, toDate = (j) => new Date((j - 2440587.5) * 86400000);
   return { rise: toDate(Jt - w), set: toDate(Jt + w) };
 }
+/* ---------- Hemel van nu: tijdstip (zon) × weer (Open-Meteo) ---------- */
+let weather = null;
+async function loadWeather() {
+  try { const r = await fetch(`/api/sky?lat=${cfg.lat}&lon=${cfg.lon}`); if (r.ok) weather = await r.json(); } catch (e) {}
+  applyNight();
+}
+function condition(code) {
+  if (code == null) return "helder";
+  if (code === 0) return "helder";
+  if (code <= 2) return "wolkjes";
+  if (code === 3) return "bewolkt";
+  if (code <= 48) return "mist";
+  if (code <= 67 || (code >= 80 && code <= 82)) return "regen";
+  if (code <= 77 || code === 85 || code === 86) return "sneeuw";
+  return "onweer";
+}
+const SKY = { // boven, onder
+  ochtendgloren: ["#fbe1cc", "#fdf7f1"], dag: ["#d9eaf9", "#f8fbfe"], schemering: ["#f4cfc4", "#eee4f2"],
+  wolkjes: ["#e1ebf4", "#f8fafc"], bewolkt: ["#e4e7ea", "#f7f8f9"], mist: ["#ebebe8", "#f6f6f4"],
+  regen: ["#d6dce2", "#eef1f3"], sneeuw: ["#eef2f6", "#ffffff"], onweer: ["#c9cfd7", "#e6e9ec"],
+};
 function applyNight() {
-  let on = cfg.night === "on";
-  if (cfg.night !== "on" && cfg.night !== "off") {
-    const now = new Date(), s = sunTimes(now, cfg.lat, -cfg.lon); // de formule verwacht westerlengte positief
-    on = s.polar ? s.polar === "night" : (now < new Date(s.rise.getTime() - 20 * 60e3) || now > new Date(s.set.getTime() + 20 * 60e3));
-  }
-  document.body.classList.toggle("night", on);
-  document.querySelector('meta[name="theme-color"]').setAttribute("content", on ? "#0b0d10" : "#ffffff");
+  const now = new Date(), noon = new Date(now); noon.setHours(12, 0, 0, 0);
+  const s = sunTimes(noon, cfg.lat, -cfg.lon); // tijden van vandaag; de formule verwacht westerlengte positief
+  const m = 60e3;
+  let phase = "dag";
+  if (s.polar) phase = s.polar === "night" ? "nacht" : "dag";
+  else if (now < s.rise.getTime() - 30 * m || now > s.set.getTime() + 30 * m) phase = "nacht";
+  else if (now < s.rise.getTime() + 60 * m) phase = "ochtendgloren";
+  else if (now > s.set.getTime() - 60 * m) phase = "schemering";
+  const cond = condition(weather?.code);
+  const night = cfg.night === "on" || (cfg.night !== "off" && phase === "nacht");
+  document.body.classList.toggle("night", night);
+  let sky = null;
+  if (!night && cfg.night !== "off") sky = (phase === "dag" ? SKY[cond === "helder" ? "dag" : cond] : SKY[cond === "regen" || cond === "onweer" || cond === "bewolkt" ? cond : phase]) || SKY.dag;
+  document.body.style.setProperty("--sky1", sky ? sky[0] : "");
+  document.body.style.setProperty("--sky2", sky ? sky[1] : "");
+  if (!sky && !night) { document.body.style.removeProperty("--sky1"); document.body.style.removeProperty("--sky2"); }
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", night ? "#0a1430" : sky ? sky[0] : "#ffffff");
+  $("wx").textContent = weather ? `· ${Math.round(weather.temp)}° ${cond === "helder" && night ? "heldere nacht" : cond}` : "";
 }
 
 /* ---------- De prent ---------- */
@@ -974,7 +1007,7 @@ $("f-save").addEventListener("click", () => {
   const lat = parseFloat(String($("f-lat").value).replace(",", ".")), lon = parseFloat(String($("f-lon").value).replace(",", "."));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { $("f-msg").textContent = "Vul een geldige breedte- en lengtegraad in."; return; }
   cfg = { title: $("f-title").value.trim(), place: pendingPlace || "", lat, lon, radius: +$("f-rad").value, view: $("f-view").value, night: $("f-night").value };
-  saveCfg(); header(); applyNight(); dlg.close(); last = null;
+  saveCfg(); header(); weather = null; loadWeather(); dlg.close(); last = null;
   $("fleet").innerHTML = `<div class="empty"><b>Luchtruim afluisteren…</b>Even geduld.</div>`;
   history.replaceState(null, "", location.pathname);
   load();
@@ -986,8 +1019,9 @@ async function wake() { try { await navigator.wakeLock?.request("screen"); } cat
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { wake(); load(); } });
 
 let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => last && render(last), 150); });
-header(); applyNight(); load(); wake();
+header(); applyNight(); load(); wake(); loadWeather();
 setInterval(applyNight, 60000);
+setInterval(loadWeather, 15 * 60000);
 setInterval(load, 30000);
 setInterval(tick, 15000);
 })();

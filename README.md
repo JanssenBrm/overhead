@@ -20,7 +20,7 @@ Extra's:
 
 - **Bijzondere toestellen** krijgen een label: *zeldzaam* (A380, 747, Beluga, transportvliegtuigen en meer), *nieuw type* (het eerste uur nadat een type voor het eerst boven je plek vloog, zodra het logboek een dag loopt) en *militair*.
 - **Logboek van vandaag** achter de knop *Vandaag*: aantal toestellen, types en maatschappijen, de grootste, hoogste en dichtstbijzijnde, en een lijst met het moment van dichtste nadering. Het wordt in de browser bijgehouden zolang de pagina openstaat.
-- **Nachtstand**: tussen zonsondergang en zonsopgang op de ingestelde plek wordt de pagina donker en gedimd. Instelbaar op automatisch, altijd of nooit.
+- **Hemel van nu**: de achtergrond kleurt mee met het uur (ochtendgloren, dag, schemering) en het weer (`api/sky.js`, Open-Meteo); 's nachts wordt de pagina donker en gedimd. Het weer staat ook in de kop. Instelbaar op hemel van nu, altijd wit of altijd donker.
 
 ## Hoe het werkt
 
