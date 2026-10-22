@@ -60,8 +60,20 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,48px);l
 
 .fleet{display:flex;flex-wrap:wrap;gap:30px 26px;align-items:flex-end;justify-content:center}
 .ac{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:150px;max-width:100%}
-.ac svg{display:block;overflow:visible;transition:transform .3s}
+.ac svg{display:block;overflow:visible;max-width:100%;height:auto;transition:transform .3s}
 .ac:hover svg{transform:translateY(-3px)}
+.ac.ph{min-width:0}
+.ac.ph .card{width:100%}
+.photo{margin:0;position:relative;width:100%;border-radius:6px;overflow:hidden;background:var(--rule)}
+.photo img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;transition:transform .4s}
+.ac.ph:hover .photo img{transform:scale(1.03)}
+.photo figcaption{position:absolute;right:6px;bottom:6px;font:10.5px/1.3 var(--mono);background:rgba(0,0,0,.6);color:#fff;padding:2px 6px;border-radius:3px;max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.photo figcaption a{color:#fff;text-decoration:none}
+.ruler{display:grid;justify-items:start;gap:3px;width:100%;font:11px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.ruler i{height:7px;border:2px solid var(--accent);border-top:none;flex:none}
+.ruler span{white-space:nowrap}
+.silbox{aspect-ratio:3/2;display:grid;place-items:center;background:color-mix(in srgb,var(--plane2) 14%,var(--sheet))}
+.silbox svg{max-width:85%;max-height:85%}
 .card{width:168px;border-top:2px solid var(--ink);padding-top:7px;display:grid;gap:3px;font-size:13px}
 .cs{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
 .cs b{font-family:var(--display);font-size:21px;font-weight:700;letter-spacing:.01em;line-height:1}
@@ -87,7 +99,7 @@ dialog::backdrop{background:rgba(10,20,28,.45)}
 .dlg h2{font-family:var(--display);font-size:26px;margin:0}
 .field{display:grid;gap:5px;font-size:13.5px;font-weight:500}
 .field small{font-weight:400;color:var(--muted)}
-input{font:inherit;color:var(--ink);background:var(--floor);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;width:100%}
+input,select{font:inherit;color:var(--ink);background:var(--floor);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;width:100%}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .results{display:grid;gap:4px}
 .results button{text-align:left;background:var(--floor);border:1px solid var(--rule);border-radius:6px;padding:7px 10px;color:var(--ink);font:inherit;cursor:pointer}
@@ -124,7 +136,7 @@ input{font:inherit;color:var(--ink);background:var(--floor);border:1px solid var
     <div class="fleet" id="fleet"><div class="empty"><b>Luchtruim afluisteren…</b>Even geduld.</div></div>
   </main>
 
-  <footer>Posities: <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> / <a href="https://adsb.fi" target="_blank" rel="noopener">adsb.fi</a> · Routes: <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · Silhouetten zijn schematisch, maten op schaal van spanwijdte en lengte.</footer>
+  <footer>Posities: <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> / <a href="https://adsb.fi" target="_blank" rel="noopener">adsb.fi</a> · Routes: <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · Foto's: <a href="https://www.planespotters.net" target="_blank" rel="noopener">planespotters.net</a>, © de vermelde fotografen · De oranje lat toont de spanwijdte op schaal.</footer>
 </div>
 
 <dialog id="dlg">
@@ -145,6 +157,9 @@ input{font:inherit;color:var(--ink);background:var(--floor);border:1px solid var
     <label class="field">Straal: <span id="f-radv">40 km</span>
       <input id="f-rad" type="range" min="5" max="100" step="5">
     </label>
+    <label class="field">Afbeeldingen
+      <select id="f-view"><option value="foto">Foto's van het toestel</option><option value="silhouet">Silhouetten op schaal</option></select>
+    </label>
     <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
     <p class="hint" id="f-msg"></p>
     <div class="btns">
@@ -161,7 +176,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const nf = new Intl.NumberFormat("nl-BE");
 
 /* ---------- Instellingen: URL-parameters > opgeslagen > standaard ---------- */
-const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40 };
+const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40, view: "foto" };
 function loadCfg() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
@@ -170,6 +185,7 @@ function loadCfg() {
   if (p.has("lat") && p.has("lon")) { cfg.lat = +p.get("lat"); cfg.lon = +p.get("lon"); cfg.place = p.get("plaats") || ""; }
   if (p.has("straal")) cfg.radius = +p.get("straal");
   if (p.has("titel")) cfg.title = p.get("titel");
+  if (p.has("weergave")) cfg.view = p.get("weergave") === "silhouet" ? "silhouet" : "foto";
   return cfg;
 }
 let cfg = loadCfg();
@@ -340,7 +356,11 @@ function render(data) {
   // Eén schaal voor alles: het grootste toestel krijgt ongeveer de helft van de breedte, hoogstens 380 px
   const avail = fleet.clientWidth || 360;
   const maxSpan = Math.max(...list.map((a) => a.sp.span));
-  const k = (avail < 560 ? avail * 0.46 : Math.min(380, avail * 0.48)) / maxSpan; // px per meter
+  const photos = cfg.view !== "silhouet";
+  const narrow = avail < 560;
+  // Met foto's krijgt het grootste toestel meer ruimte; kleine foto's houden een minimumbreedte en de oranje lat toont dan de echte maat
+  const k = (photos ? (narrow ? avail * 0.9 : Math.min(520, avail * 0.6)) : (narrow ? avail * 0.46 : Math.min(380, avail * 0.48))) / maxSpan; // px per meter
+  const minW = narrow ? (avail - 12) / 2 : 210;
   const ten = 10 * k;
   $("scalebar").innerHTML = `<i style="width:${ten.toFixed(1)}px"></i>10 m · alle toestellen op dezelfde schaal`;
   $("board").style.setProperty("--grid", `${ten.toFixed(1)}px`);
@@ -349,8 +369,15 @@ function render(data) {
     const [tk, tl] = trend(a);
     const name = a.callsign || a.reg || a.hex.toUpperCase();
     const airline = a.airline || a.operator;
-    return `<article class="ac">
-      ${drawPlane(a.sp, k)}
+    const spanTxt = a.sp.span.toFixed(1).replace(".", ",").replace(",0", "") + " m";
+    const fitK = (bw) => Math.min((bw * 0.82) / (a.sp.span + 1.2), (bw * 0.56) / (Math.max(a.sp.len, a.sp.shape === "heli" ? a.sp.span : 0) + 1.2));
+    const w = photos ? Math.min(avail, Math.max(minW, a.sp.span * k)) : 0;
+    const pic = photos
+      ? `<figure class="photo">${a.photo ? `<img src="${esc(a.photo.src)}" alt="${esc(a.sp.model)} ${esc(a.reg || "")}" loading="lazy" referrerpolicy="no-referrer">${a.photo.by ? `<figcaption>© <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a> · planespotters</figcaption>` : ""}` : `<div class="silbox">${drawPlane(a.sp, fitK(w))}</div>`}</figure>
+         <div class="ruler" title="Spanwijdte op schaal"><i style="width:${(a.sp.span * k).toFixed(1)}px"></i><span>${spanTxt}</span></div>`
+      : drawPlane(a.sp, k);
+    return `<article class="ac${w ? " ph" : ""}"${w ? ` style="width:${w.toFixed(0)}px"` : ""}>
+      ${pic}
       <div class="card">
         <div class="cs"><b>${esc(name)}</b><span>${a.dist.toFixed(0)} km</span></div>
         ${airline ? `<div class="airline">${esc(airline)}</div>` : ""}
@@ -392,7 +419,7 @@ function setStatus(err) {
 const dlg = $("dlg");
 function openSettings() {
   $("f-title").value = cfg.title; $("f-lat").value = cfg.lat; $("f-lon").value = cfg.lon;
-  $("f-rad").value = cfg.radius; $("f-radv").textContent = cfg.radius + " km";
+  $("f-rad").value = cfg.radius; $("f-view").value = cfg.view; $("f-radv").textContent = cfg.radius + " km";
   $("f-search").value = cfg.place || ""; $("results").innerHTML = ""; $("f-msg").textContent = "";
   dlg.showModal();
 }
@@ -428,7 +455,7 @@ $("f-geo").addEventListener("click", () => {
 $("f-save").addEventListener("click", () => {
   const lat = parseFloat(String($("f-lat").value).replace(",", ".")), lon = parseFloat(String($("f-lon").value).replace(",", "."));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { $("f-msg").textContent = "Vul een geldige breedte- en lengtegraad in."; return; }
-  cfg = { title: $("f-title").value.trim(), place: pendingPlace || "", lat, lon, radius: +$("f-rad").value };
+  cfg = { title: $("f-title").value.trim(), place: pendingPlace || "", lat, lon, radius: +$("f-rad").value, view: $("f-view").value };
   saveCfg(); header(); dlg.close(); last = null;
   $("fleet").innerHTML = `<div class="empty"><b>Luchtruim afluisteren…</b>Even geduld.</div>`;
   history.replaceState(null, "", location.pathname);

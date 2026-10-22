@@ -4,6 +4,8 @@
 
 const ROUTE_TTL = 6 * 3600e3;
 const routeCache = new Map(); // callsign -> { at, value }
+const PHOTO_TTL = 24 * 3600e3;
+const photoCache = new Map(); // hex -> { at, value }
 
 const R = 6371;
 const rad = (d) => (d * Math.PI) / 180;
@@ -59,6 +61,33 @@ async function route(callsign) {
     // onbekende roepnaam of trage bron: geen route
   }
   routeCache.set(callsign, { at: Date.now(), value });
+  return value;
+}
+
+// Foto van precies dit toestel (op ICAO-hexcode), met fotograaf en link terug zoals planespotters vraagt
+async function photo(hex) {
+  if (!hex) return null;
+  const hit = photoCache.get(hex);
+  if (hit && Date.now() - hit.at < PHOTO_TTL) return hit.value;
+  let value = null;
+  try {
+    const j = await getJSON(`https://api.planespotters.net/pub/photos/hex/${encodeURIComponent(hex)}`, 4000);
+    const ph = j?.photos?.[0];
+    if (ph) {
+      const big = ph.thumbnail_large || ph.thumbnail;
+      value = {
+        src: big?.src,
+        w: big?.size?.width || null,
+        h: big?.size?.height || null,
+        by: ph.photographer || null,
+        link: ph.link || null,
+      };
+      if (!value.src) value = null;
+    }
+  } catch (e) {
+    return null; // niet cachen bij een fout, volgende keer opnieuw proberen
+  }
+  photoCache.set(hex, { at: Date.now(), value });
   return value;
 }
 
@@ -125,6 +154,7 @@ export default async function handler(req, res) {
     const r = await route(a.callsign);
     a.route = r && r.from && r.to ? { from: r.from, to: r.to } : null;
     a.airline = r?.airline || null;
+    a.photo = q.photos === "0" ? null : await photo(a.hex);
   });
 
   res.setHeader("Cache-Control", "public, s-maxage=15, stale-while-revalidate=30");
