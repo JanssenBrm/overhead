@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e9eef0">
+<title>Overhead</title>
+<meta name="description" content="Wat vliegt er nu boven je huis, getekend op schaal van de spanwijdte.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -2 40 40'%3E%3Cpath fill='%23173049' d='M0 0c1.5 1 1.6 4 1.6 12L19 20v3L1.6 19v10l5 3v2L0 32.6-6.6 34v-2l5-3V19L-19 23v-3l17.4-8C-1.6 4-1.5 1 0 0z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: een specimenbord. Alle toestellen in bovenaanzicht op één gedeelde schaal, groot naar klein, met een kaartje eronder. */
+:root{
+  --floor:#e9eef0;        /* hangarvloer */
+  --sheet:#f6f8f9;
+  --ink:#14222e;
+  --muted:#5d6c76;
+  --rule:#c9d3d8;
+  --plane:#173049;        /* romp en vleugels */
+  --plane2:#3b5a78;       /* motoren, staart */
+  --accent:#d2541c;       /* signaaloranje, schaalbalk en focus */
+  --climb:#2f7a4a; --descend:#a8650a; --cruise:#2d6a9a;
+  --display:"Saira Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --floor:#0f171d; --sheet:#152129; --ink:#e4ecef; --muted:#90a1aa; --rule:#2a3a44;
+  --plane:#d9e6ee; --plane2:#8fb1cc; --accent:#f07a3d;
+  --climb:#69c08a; --descend:#e2a54a; --cruise:#79b4e2; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--floor);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4;min-height:100vh;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:1400px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,48px);line-height:1;margin:4px 0 0;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-family:var(--mono);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meta .live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--climb);margin-right:6px;vertical-align:1px;animation:pulse 2s infinite}
+.meta .stale::before{background:var(--descend);animation:none}
+@keyframes pulse{50%{opacity:.25}}
+
+.gear{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.gear:hover{border-color:var(--ink)}
+.gear svg{width:22px;height:22px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.board{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:22px 18px 26px;position:relative;
+  background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);
+  background-size:var(--grid,40px) var(--grid,40px);background-position:-1px -1px}
+.board::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--sheet);opacity:.82;pointer-events:none}
+.board>*{position:relative}
+.scalebar{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-bottom:18px}
+.scalebar i{display:block;height:6px;border:2px solid var(--accent);border-top:none}
+
+.fleet{display:flex;flex-wrap:wrap;gap:30px 26px;align-items:flex-end;justify-content:center}
+.ac{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:150px;max-width:100%}
+.ac svg{display:block;overflow:visible;transition:transform .3s}
+.ac:hover svg{transform:translateY(-3px)}
+.card{width:168px;border-top:2px solid var(--ink);padding-top:7px;display:grid;gap:3px;font-size:13px}
+.cs{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.cs b{font-family:var(--display);font-size:21px;font-weight:700;letter-spacing:.01em;line-height:1}
+.cs span{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.model{font-weight:600}
+.airline{color:var(--muted);font-size:12px;margin-top:-2px}
+.route{font-family:var(--mono);font-size:12.5px}
+.route small{display:block;font-family:var(--body);font-size:11.5px;color:var(--muted)}
+.alt{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums;display:grid;justify-items:start;gap:5px;margin-top:2px}
+.trend{display:inline-flex;align-items:center;gap:4px;font-family:var(--body);font-size:11.5px;font-weight:600;padding:1px 7px 1px 5px;border-radius:99px;border:1.5px solid currentColor;white-space:nowrap}
+.trend svg{width:12px;height:12px}
+.t-climb{color:var(--climb)}.t-descend{color:var(--descend)}.t-cruise{color:var(--cruise)}.t-ground{color:var(--muted)}
+
+.empty{text-align:center;padding:60px 16px;color:var(--muted);max-width:46ch;margin:0 auto}
+.empty b{display:block;font-family:var(--display);font-size:26px;color:var(--ink);margin-bottom:6px}
+footer{margin-top:18px;font-size:12px;color:var(--muted);text-align:center}
+footer a{color:inherit}
+
+/* Instellingen */
+dialog{border:1px solid var(--rule);border-radius:12px;background:var(--sheet);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(10,20,28,.45)}
+.dlg{padding:22px;display:grid;gap:16px}
+.dlg h2{font-family:var(--display);font-size:26px;margin:0}
+.field{display:grid;gap:5px;font-size:13.5px;font-weight:500}
+.field small{font-weight:400;color:var(--muted)}
+input{font:inherit;color:var(--ink);background:var(--floor);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;width:100%}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.results{display:grid;gap:4px}
+.results button{text-align:left;background:var(--floor);border:1px solid var(--rule);border-radius:6px;padding:7px 10px;color:var(--ink);font:inherit;cursor:pointer}
+.results button small{color:var(--muted);display:block;font-size:12px}
+.btns{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;border-radius:6px;padding:9px 16px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--sheet)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.hint{font-size:12px;color:var(--muted)}
+@media (max-width:560px){
+  .fleet{gap:26px 12px;justify-content:space-between}
+  .ac{width:calc(50% - 6px);min-width:0}
+  .card{width:100%}
+  .cs b{font-size:18px}
+  .board{padding:16px 12px 20px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow" id="where">Locatie instellen</div>
+      <h1 id="title">Wat vliegt er boven ons?</h1>
+      <div class="meta"><span id="status">laden…</span><span id="count"></span></div>
+    </div>
+    <button class="gear" id="gear" type="button" aria-label="Instellingen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <main class="board" id="board">
+    <div class="scalebar" id="scalebar"></div>
+    <div class="fleet" id="fleet"><div class="empty"><b>Luchtruim afluisteren…</b>Even geduld.</div></div>
+  </main>
+
+  <footer>Posities: <a href="https://adsb.lol" target="_blank" rel="noopener">adsb.lol</a> / <a href="https://adsb.fi" target="_blank" rel="noopener">adsb.fi</a> · Routes: <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb</a> · Silhouetten zijn schematisch, maten op schaal van spanwijdte en lengte.</footer>
+</div>
+
+<dialog id="dlg">
+  <form class="dlg" id="form" method="dialog">
+    <h2>Instellingen</h2>
+    <label class="field">Titel
+      <input id="f-title" placeholder="Wat vliegt er boven ons?">
+      <small>Bijvoorbeeld "Boven het huis van Jos".</small>
+    </label>
+    <label class="field">Zoek een plaats
+      <input id="f-search" placeholder="Gemeente of straat" autocomplete="off">
+    </label>
+    <div class="results" id="results"></div>
+    <div class="row">
+      <label class="field">Breedtegraad<input id="f-lat" inputmode="decimal"></label>
+      <label class="field">Lengtegraad<input id="f-lon" inputmode="decimal"></label>
+    </div>
+    <label class="field">Straal: <span id="f-radv">40 km</span>
+      <input id="f-rad" type="range" min="5" max="100" step="5">
+    </label>
+    <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
+    <p class="hint" id="f-msg"></p>
+    <div class="btns">
+      <button class="btn ghost" value="cancel" type="submit">Annuleer</button>
+      <button class="btn" id="f-save" type="button">Opslaan</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const nf = new Intl.NumberFormat("nl-BE");
+
+/* ---------- Instellingen: URL-parameters > opgeslagen > standaard ---------- */
+const DEFAULTS = { title: "", place: "Dessel", lat: 51.2387, lon: 5.1159, radius: 40 };
+function loadCfg() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
+  const cfg = { ...DEFAULTS, ...saved };
+  const p = new URLSearchParams(location.search);
+  if (p.has("lat") && p.has("lon")) { cfg.lat = +p.get("lat"); cfg.lon = +p.get("lon"); cfg.place = p.get("plaats") || ""; }
+  if (p.has("straal")) cfg.radius = +p.get("straal");
+  if (p.has("titel")) cfg.title = p.get("titel");
+  return cfg;
+}
+let cfg = loadCfg();
+function saveCfg() { try { localStorage.setItem("overhead.cfg", JSON.stringify(cfg)); } catch (e) {} }
+
+/* ---------- Vliegtuigtypes: [model, spanwijdte m, lengte m, vorm] ----------
+   vorm: jet = twee motoren onder de vleugel, jet4 = vier, tail = motoren achteraan,
+   prop = turboprop (2), prop4, ga = kleine eenmotorige, heli, fighter */
+const T = {
+  A318:["Airbus A318",34.1,31.4,"jet"],A319:["Airbus A319",34.1,33.8,"jet"],A320:["Airbus A320",35.8,37.6,"jet"],A20N:["Airbus A320neo",35.8,37.6,"jet"],
+  A321:["Airbus A321",35.8,44.5,"jet"],A21N:["Airbus A321neo",35.8,44.5,"jet"],BCS1:["Airbus A220-100",35.1,35,"jet"],BCS3:["Airbus A220-300",35.1,38.7,"jet"],
+  A306:["Airbus A300-600",44.8,54.1,"jet"],A310:["Airbus A310",43.9,46.7,"jet"],A332:["Airbus A330-200",60.3,58.8,"jet"],A333:["Airbus A330-300",60.3,63.7,"jet"],
+  A338:["Airbus A330-800",64,58.8,"jet"],A339:["Airbus A330-900",64,63.7,"jet"],A343:["Airbus A340-300",60.3,63.7,"jet4"],A346:["Airbus A340-600",63.5,75.4,"jet4"],
+  A359:["Airbus A350-900",64.8,66.8,"jet"],A35K:["Airbus A350-1000",64.8,73.8,"jet"],A388:["Airbus A380",79.8,72.7,"jet4"],A400:["Airbus A400M Atlas",42.4,45.1,"prop4"],
+  B712:["Boeing 717",28.4,37.8,"tail"],B733:["Boeing 737-300",28.9,33.4,"jet"],B734:["Boeing 737-400",28.9,36.4,"jet"],B735:["Boeing 737-500",28.9,31,"jet"],
+  B736:["Boeing 737-600",34.3,31.2,"jet"],B737:["Boeing 737-700",35.8,33.6,"jet"],B738:["Boeing 737-800",35.8,39.5,"jet"],B739:["Boeing 737-900",35.8,42.1,"jet"],
+  B37M:["Boeing 737 MAX 7",35.9,35.6,"jet"],B38M:["Boeing 737 MAX 8",35.9,39.5,"jet"],B39M:["Boeing 737 MAX 9",35.9,42.2,"jet"],B3XM:["Boeing 737 MAX 10",35.9,43.8,"jet"],
+  B744:["Boeing 747-400",64.4,70.7,"jet4"],B748:["Boeing 747-8",68.4,76.3,"jet4"],B752:["Boeing 757-200",38,47.3,"jet"],B753:["Boeing 757-300",38,54.4,"jet"],
+  B762:["Boeing 767-200",47.6,48.5,"jet"],B763:["Boeing 767-300",47.6,54.9,"jet"],B764:["Boeing 767-400",51.9,61.4,"jet"],
+  B772:["Boeing 777-200",60.9,63.7,"jet"],B77L:["Boeing 777-200LR",64.8,63.7,"jet"],B77W:["Boeing 777-300ER",64.8,73.9,"jet"],B778:["Boeing 777-8",71.8,70.9,"jet"],B779:["Boeing 777-9",71.8,76.7,"jet"],
+  B788:["Boeing 787-8",60.1,56.7,"jet"],B789:["Boeing 787-9",60.1,62.8,"jet"],B78X:["Boeing 787-10",60.1,68.3,"jet"],MD11:["McDonnell Douglas MD-11",51.7,61.6,"jet"],
+  E170:["Embraer E170",26,29.9,"jet"],E75L:["Embraer E175",26,31.7,"jet"],E75S:["Embraer E175",26,31.7,"jet"],E190:["Embraer E190",28.7,36.2,"jet"],E195:["Embraer E195",28.7,38.7,"jet"],
+  E290:["Embraer E190-E2",33.7,36.2,"jet"],E295:["Embraer E195-E2",35.1,41.5,"jet"],E145:["Embraer ERJ-145",20,29.9,"tail"],E135:["Embraer ERJ-135",20,26.3,"tail"],
+  CRJ7:["Bombardier CRJ700",23.2,32.5,"tail"],CRJ9:["Bombardier CRJ900",24.9,36.2,"tail"],CRJX:["Bombardier CRJ1000",26.2,39.1,"tail"],
+  AT72:["ATR 72",27.1,27.2,"prop"],AT75:["ATR 72-500",27.1,27.2,"prop"],AT76:["ATR 72-600",27.1,27.2,"prop"],AT45:["ATR 42-500",24.6,22.7,"prop"],AT46:["ATR 42-600",24.6,22.7,"prop"],
+  DH8D:["De Havilland Dash 8-400",28.4,32.8,"prop"],SF34:["Saab 340",21.4,19.7,"prop"],D328:["Dornier 328",21,21.1,"prop"],
+  C130:["Lockheed C-130 Hercules",40.4,29.8,"prop4"],C30J:["Lockheed C-130J Hercules",40.4,29.8,"prop4"],C17:["Boeing C-17 Globemaster",51.8,53,"jet4"],
+  K35R:["Boeing KC-135",39.9,41.5,"jet4"],A330:["Airbus A330 MRTT",60.3,58.8,"jet"],
+  GLF4:["Gulfstream IV",23.7,26.9,"tail"],GLF5:["Gulfstream V",28.5,29.4,"tail"],GLF6:["Gulfstream G650",30.4,30.4,"tail"],GL7T:["Bombardier Global 7500",31.7,33.8,"tail"],
+  GLEX:["Bombardier Global Express",28.7,30.3,"tail"],CL35:["Bombardier Challenger 350",21,20.9,"tail"],CL60:["Bombardier Challenger 600",19.6,20.9,"tail"],
+  F900:["Dassault Falcon 900",19.3,20.2,"tail"],FA7X:["Dassault Falcon 7X",26.2,23.2,"tail"],FA8X:["Dassault Falcon 8X",26.3,24.5,"tail"],F2TH:["Dassault Falcon 2000",19.3,20.2,"tail"],
+  C25A:["Cessna Citation CJ2",15.1,14.5,"tail"],C25B:["Cessna Citation CJ3",16.3,15.6,"tail"],C25C:["Cessna Citation CJ4",15.5,16.3,"tail"],C56X:["Cessna Citation Excel",16,15.8,"tail"],
+  C68A:["Cessna Citation Latitude",22,18.9,"tail"],C700:["Cessna Citation Longitude",20.6,22.3,"tail"],E55P:["Embraer Phenom 300",16.2,15.6,"tail"],E50P:["Embraer Phenom 100",12.3,12.8,"tail"],
+  LJ45:["Learjet 45",14.6,17.7,"tail"],PC24:["Pilatus PC-24",17,16.9,"tail"],PC12:["Pilatus PC-12",16.3,14.4,"ga"],TBM9:["Daher TBM 900",12.8,10.7,"ga"],TBM7:["Daher TBM 700",12.7,10.6,"ga"],
+  B350:["Beechcraft King Air 350",17.7,14.2,"prop"],BE20:["Beechcraft King Air 200",16.6,13.3,"prop"],BE58:["Beechcraft Baron",11.5,9.1,"prop"],DA42:["Diamond DA42",13.4,8.6,"prop"],DA62:["Diamond DA62",14.6,9.2,"prop"],
+  C150:["Cessna 150",10.2,7.3,"ga"],C152:["Cessna 152",10.2,7.3,"ga"],C172:["Cessna 172",11,8.3,"ga"],C182:["Cessna 182",11,8.8,"ga"],C206:["Cessna 206",11,8.6,"ga"],C208:["Cessna Caravan",15.9,11.5,"ga"],
+  P28A:["Piper PA-28",10.7,7.3,"ga"],P28R:["Piper Arrow",10.8,7.5,"ga"],PA46:["Piper Malibu",13.1,8.8,"ga"],SR20:["Cirrus SR20",11.7,7.9,"ga"],SR22:["Cirrus SR22",11.7,7.9,"ga"],
+  DA40:["Diamond DA40",11.9,8,"ga"],DR40:["Robin DR400",8.7,7,"ga"],RV7:["Van's RV-7",7.7,6.2,"ga"],DV20:["Diamond DA20",10.9,7.2,"ga"],
+  F16:["General Dynamics F-16",9.8,15,"fighter"],F35:["Lockheed F-35",10.7,15.7,"fighter"],EUFI:["Eurofighter Typhoon",10.9,15.9,"fighter"],RFAL:["Dassault Rafale",10.9,15.3,"fighter"],
+  A139:["AgustaWestland AW139",13.8,16.7,"heli"],A169:["AgustaWestland AW169",12.1,14.7,"heli"],EC35:["Airbus H135",10.2,12.2,"heli"],EC45:["Airbus H145",11,13.6,"heli"],
+  EC30:["Airbus H130",10.7,12.6,"heli"],AS50:["Airbus H125",10.7,12.9,"heli"],NH90:["NH90",16.3,19.6,"heli"],R44:["Robinson R44",10.1,11.7,"heli"],R22:["Robinson R22",7.7,8.8,"heli"],
+  B06:["Bell 206",10.2,11.8,"heli"],B407:["Bell 407",10.7,12.7,"heli"],H500:["MD 500",8.1,9.4,"heli"]
+};
+// Valt terug op de ADS-B-categorie als het type onbekend is
+const CAT = { A1:["Klein vliegtuig",11,8.3,"ga"], A2:["Zakenvliegtuig",18,17,"tail"], A3:["Verkeersvliegtuig",35,38,"jet"], A4:["Verkeersvliegtuig",38,47,"jet"], A5:["Groot verkeersvliegtuig",62,65,"jet"], A7:["Helikopter",11,13,"heli"], B1:["Zweefvliegtuig",15,7,"ga"] };
+function spec(a) {
+  const t = T[a.type];
+  if (t) return { model: t[0], span: t[1], len: t[2], shape: t[3], known: true };
+  const c = CAT[a.category] || ["", 30, 32, "jet"];
+  return { model: a.desc ? titleCase(a.desc) : (a.type || c[0] || "Onbekend type"), span: c[1], len: c[2], shape: c[3], known: false };
+}
+function titleCase(s) { return s.toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase()).replace(/\b(Ii|Iii|Iv)\b/g, (m) => m.toUpperCase()); }
+
+/* ---------- Bovenaanzicht in meters (neus boven, y loopt naar de staart) ---------- */
+function plan(sp) {
+  const s = sp.span, L = sp.len, h = s / 2;
+  const P = (pts) => `<path d="M${pts.map((p) => p.map((v) => v.toFixed(2)).join(" ")).join(" L")}Z"/>`;
+  const mirror = (pts) => pts.map(([x, y]) => [-x, y]);
+  let body = "", extra = "";
+  const fuselage = (fw, tailW = 0.12) => {
+    const n = fw * 1.6; // neuslengte
+    return `<path d="M0 0 C${fw*0.45} 0 ${fw/2} ${n*0.5} ${fw/2} ${n} L${fw/2} ${L*0.74} L${fw*tailW} ${L} L${-fw*tailW} ${L} L${-fw/2} ${L*0.74} L${-fw/2} ${n} C${-fw/2} ${n*0.5} ${-fw*0.45} 0 0 0Z"/>`;
+  };
+  const wing = (fw, y0, cr, ct, sweepDeg, span = h) => {
+    const dx = (span - fw / 2) * Math.tan(sweepDeg * Math.PI / 180);
+    const r = [[fw / 2, y0], [span, y0 + dx], [span, y0 + dx + ct], [fw / 2, y0 + cr]];
+    return P(r) + P(mirror(r));
+  };
+  const tail = (fw, hs, cr, sweepDeg) => {
+    const y0 = L - cr - L * 0.015;
+    return wing(fw * 0.5, y0, cr, cr * 0.4, sweepDeg, hs / 2);
+  };
+  const leAt = (x, y0, fw, sweep) => y0 + (x - fw / 2) * Math.tan(sweep * Math.PI / 180);
+
+  if (sp.shape === "heli") {
+    const r = h, fw = L * 0.17;
+    body = `<ellipse cx="0" cy="${L*0.24}" rx="${fw/2}" ry="${L*0.2}"/><path d="M${-fw*0.12} ${L*0.4} L${fw*0.12} ${L*0.4} L${fw*0.08} ${L} L${-fw*0.08} ${L}Z"/><path d="M${-fw*0.7} ${L*0.94} L${fw*0.7} ${L*0.94} L${fw*0.7} ${L*0.98} L${-fw*0.7} ${L*0.98}Z"/>`;
+    extra = `<circle cx="0" cy="${L*0.24}" r="${r}" fill="none" stroke="var(--plane2)" stroke-width="${Math.max(0.12, s*0.012)}" stroke-dasharray="${s*0.05} ${s*0.03}" opacity=".8"/>
+      <path d="M${-r} ${L*0.24} L${r} ${L*0.24} M0 ${L*0.24-r} L0 ${L*0.24+r}" stroke="var(--plane2)" stroke-width="${s*0.018}" opacity=".9"/>`;
+    return { svg: extra + body, top: L * 0.24 - r, bottom: Math.max(L, L * 0.24 + r), left: -r, right: r };
+  }
+  if (sp.shape === "ga") {
+    const fw = L * 0.14, y0 = L * 0.27, cr = Math.max(1.3, s * 0.13);
+    body = fuselage(fw, 0.1) + wing(fw, y0, cr, cr * 0.75, 0) + tail(fw, s * 0.34, L * 0.11, 4);
+    extra = `<path d="M${-s*0.09} -0.15 L${s*0.09} -0.15" stroke="var(--plane2)" stroke-width="${s*0.016}" stroke-linecap="round"/>`;
+  } else if (sp.shape === "fighter") {
+    const fw = L * 0.09, y0 = L * 0.38;
+    const r = [[fw / 2, y0], [h, L * 0.72], [h, L * 0.78], [fw / 2, L * 0.76]];
+    body = fuselage(fw, 0.25) + P(r) + P(mirror(r)) + tail(fw, s * 0.55, L * 0.12, 35);
+  } else if (sp.shape === "prop" || sp.shape === "prop4") {
+    const fw = L * 0.1, y0 = L * 0.37, cr = L * 0.11;
+    body = fuselage(fw, 0.15) + wing(fw, y0, cr, cr * 0.6, 2) + tail(fw, s * 0.3, L * 0.11, 8);
+    const xs = sp.shape === "prop4" ? [s * 0.17, s * 0.31] : [s * 0.18];
+    xs.forEach((x) => {
+      const nw = fw * 0.33, top = y0 - L * 0.1, bot = y0 + cr * 1.1;
+      [x, -x].forEach((cx) => {
+        extra += `<rect x="${cx - nw/2}" y="${top}" width="${nw}" height="${bot - top}" rx="${nw/2}" fill="var(--plane2)"/>`;
+        extra += `<path d="M${cx - s*0.065} ${top - 0.2} L${cx + s*0.065} ${top - 0.2}" stroke="var(--plane2)" stroke-width="${s*0.008}" stroke-linecap="round"/>`;
+      });
+    });
+  } else {
+    // straalvliegtuigen
+    const wide = s > 45, fw = L * (wide ? 0.088 : 0.1), sweep = sp.shape === "tail" ? 27 : (wide ? 31 : 25);
+    const y0 = L * (sp.shape === "tail" ? 0.4 : 0.36), cr = L * (wide ? 0.2 : 0.19);
+    body = fuselage(fw) + wing(fw, y0, cr, cr * 0.26, sweep) + tail(fw, s * (sp.shape === "tail" ? 0.36 : 0.33), L * 0.1, 33);
+    // winglets / sharklets: klein stukje aan de tip
+    if (sp.shape === "tail") {
+      const ew = fw * 0.42, el = L * 0.12, ey = L * 0.66;
+      [1, -1].forEach((sgn) => extra += `<rect x="${sgn > 0 ? fw/2 - 0.1 : -fw/2 - ew + 0.1}" y="${ey}" width="${ew}" height="${el}" rx="${ew/2}" fill="var(--plane2)"/>`);
+    } else {
+      const xs = sp.shape === "jet4" ? [s * 0.2, s * 0.35] : [s * (wide ? 0.17 : 0.18)];
+      const ew = wide ? Math.max(2.4, s * 0.05) : Math.max(1.6, s * 0.058), el = cr * (wide ? 0.62 : 0.72);
+      xs.forEach((x) => {
+        const yle = leAt(x, y0, fw, sweep);
+        [x, -x].forEach((cx) => extra += `<rect x="${cx - ew/2}" y="${yle - el*0.62}" width="${ew}" height="${el}" rx="${ew*0.4}" fill="var(--plane2)"/>`);
+      });
+    }
+  }
+  return { svg: body + extra, top: -0.5, bottom: L + 0.3, left: -h, right: h };
+}
+
+function drawPlane(sp, k) {
+  const g = plan(sp);
+  const pad = 0.6;
+  const w = (g.right - g.left + pad * 2), hgt = (g.bottom - g.top + pad * 2);
+  return `<svg width="${(w*k).toFixed(1)}" height="${(hgt*k).toFixed(1)}" viewBox="${g.left - pad} ${g.top - pad} ${w} ${hgt}" role="img" aria-label="${esc(sp.model)}, spanwijdte ${sp.span} meter"><g fill="var(--plane)">${g.svg}</g></svg>`;
+}
+
+/* ---------- Trend en hoogte ---------- */
+const ICON = {
+  climb: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 9.5 2M4.5 2h5v5"/></svg>',
+  descend: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2.5 9.5 10M9.5 5v5h-5"/></svg>',
+  cruise: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6h9M7 2.5 10.5 6 7 9.5"/></svg>',
+  ground: ''
+};
+function trend(a) {
+  if (a.onGround) return ["ground", "aan de grond"];
+  const r = a.rate;
+  if (r == null) return ["cruise", "cruise"];
+  if (r > 300) return ["climb", "stijgt"];
+  if (r < -300) return ["descend", "daalt"];
+  return ["cruise", "cruise"];
+}
+function altText(a) {
+  if (a.onGround) return "grond";
+  if (a.alt == null) return "—";
+  const ft = Math.round(a.alt), m = Math.round(ft * 0.3048 / 10) * 10;
+  return ft >= 6000 ? `FL${String(Math.round(ft / 100)).padStart(3, "0")} · ${nf.format(m)} m` : `${nf.format(ft)} ft · ${nf.format(m)} m`;
+}
+function routeHtml(a) {
+  if (!a.route) return `<div class="route"><span style="color:var(--muted)">route onbekend</span></div>`;
+  const f = a.route.from, t = a.route.to;
+  return `<div class="route">${esc(f.iata)} → ${esc(t.iata)}<small>${esc(f.city || "")} naar ${esc(t.city || "")}</small></div>`;
+}
+
+/* ---------- Tekenen ---------- */
+let last = null, lastOk = 0;
+function render(data) {
+  const fleet = $("fleet");
+  const list = (data?.aircraft || []).map((a) => ({ ...a, sp: spec(a) }));
+  $("count").textContent = data ? `${list.length} toestel${list.length === 1 ? "" : "len"} binnen ${cfg.radius} km` : "";
+  if (!list.length) {
+    fleet.innerHTML = `<div class="empty"><b>Het luchtruim is even leeg</b>Niets binnen ${cfg.radius} km. Over een minuut kijken we opnieuw.</div>`;
+    $("scalebar").innerHTML = "";
+    return;
+  }
+  list.sort((a, b) => b.sp.span - a.sp.span || a.dist - b.dist);
+  // Eén schaal voor alles: het grootste toestel krijgt ongeveer de helft van de breedte, hoogstens 380 px
+  const avail = fleet.clientWidth || 360;
+  const maxSpan = Math.max(...list.map((a) => a.sp.span));
+  const k = (avail < 560 ? avail * 0.46 : Math.min(380, avail * 0.48)) / maxSpan; // px per meter
+  const ten = 10 * k;
+  $("scalebar").innerHTML = `<i style="width:${ten.toFixed(1)}px"></i>10 m · alle toestellen op dezelfde schaal`;
+  $("board").style.setProperty("--grid", `${ten.toFixed(1)}px`);
+
+  fleet.innerHTML = list.map((a) => {
+    const [tk, tl] = trend(a);
+    const name = a.callsign || a.reg || a.hex.toUpperCase();
+    const airline = a.airline || a.operator;
+    return `<article class="ac">
+      ${drawPlane(a.sp, k)}
+      <div class="card">
+        <div class="cs"><b>${esc(name)}</b><span>${a.dist.toFixed(0)} km</span></div>
+        ${airline ? `<div class="airline">${esc(airline)}</div>` : ""}
+        <div class="model">${esc(a.sp.model)}</div>
+        ${routeHtml(a)}
+        <div class="alt"><span>${altText(a)}</span><span class="trend t-${tk}">${ICON[tk]}${tl}</span></div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function header() {
+  $("title").textContent = cfg.title || "Wat vliegt er boven ons?";
+  $("where").textContent = `${cfg.place ? cfg.place + " · " : ""}${cfg.lat.toFixed(3).replace(".", ",")}° N, ${cfg.lon.toFixed(3).replace(".", ",")}° O`;
+  document.title = cfg.title || "Overhead";
+}
+
+async function load() {
+  try {
+    const r = await fetch(`/api/aircraft?lat=${cfg.lat}&lon=${cfg.lon}&radius=${cfg.radius}`);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || "Fout bij ophalen");
+    last = j; lastOk = Date.now();
+    render(j);
+    setStatus();
+  } catch (e) {
+    setStatus(e.message);
+    if (!last) $("fleet").innerHTML = `<div class="empty"><b>Geen verbinding met de bronnen</b>${esc(e.message)} We proberen het over een halve minuut opnieuw.</div>`;
+  }
+}
+function setStatus(err) {
+  const s = $("status");
+  const t = lastOk ? new Date(lastOk).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" }) : "—";
+  s.className = err ? "live stale" : "live";
+  s.textContent = err ? `laatst bijgewerkt ${t}` : `live · ${t}`;
+}
+
+/* ---------- Instellingen-dialoog ---------- */
+const dlg = $("dlg");
+function openSettings() {
+  $("f-title").value = cfg.title; $("f-lat").value = cfg.lat; $("f-lon").value = cfg.lon;
+  $("f-rad").value = cfg.radius; $("f-radv").textContent = cfg.radius + " km";
+  $("f-search").value = cfg.place || ""; $("results").innerHTML = ""; $("f-msg").textContent = "";
+  dlg.showModal();
+}
+$("gear").addEventListener("click", openSettings);
+$("f-rad").addEventListener("input", (e) => $("f-radv").textContent = e.target.value + " km");
+let pendingPlace = cfg.place, searchT;
+$("f-search").addEventListener("input", (e) => {
+  clearTimeout(searchT);
+  const q = e.target.value.trim();
+  if (q.length < 2) { $("results").innerHTML = ""; return; }
+  searchT = setTimeout(async () => {
+    try {
+      const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+      const j = await r.json();
+      $("results").innerHTML = (j.results || []).map((p, i) => `<button type="button" data-i="${i}">${esc(p.name)}<small>${esc(p.region)}</small></button>`).join("") || `<p class="hint">Niets gevonden.</p>`;
+      $("results").querySelectorAll("button").forEach((b) => b.onclick = () => {
+        const p = j.results[+b.dataset.i];
+        $("f-lat").value = p.lat.toFixed(4); $("f-lon").value = p.lon.toFixed(4);
+        pendingPlace = p.name; $("f-search").value = p.name; $("results").innerHTML = "";
+      });
+    } catch (err) { $("results").innerHTML = `<p class="hint">Zoeken lukt nu niet.</p>`; }
+  }, 300);
+});
+$("f-geo").addEventListener("click", () => {
+  if (!navigator.geolocation) { $("f-msg").textContent = "Dit toestel kan zijn locatie niet doorgeven."; return; }
+  $("f-msg").textContent = "Locatie opvragen…";
+  navigator.geolocation.getCurrentPosition(
+    (p) => { $("f-lat").value = p.coords.latitude.toFixed(4); $("f-lon").value = p.coords.longitude.toFixed(4); pendingPlace = ""; $("f-search").value = ""; $("f-msg").textContent = "Locatie ingevuld."; },
+    () => { $("f-msg").textContent = "Toegang tot de locatie is geweigerd. Zoek de plaats op naam."; },
+    { timeout: 10000 }
+  );
+});
+$("f-save").addEventListener("click", () => {
+  const lat = parseFloat(String($("f-lat").value).replace(",", ".")), lon = parseFloat(String($("f-lon").value).replace(",", "."));
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { $("f-msg").textContent = "Vul een geldige breedte- en lengtegraad in."; return; }
+  cfg = { title: $("f-title").value.trim(), place: pendingPlace || "", lat, lon, radius: +$("f-rad").value };
+  saveCfg(); header(); dlg.close(); last = null;
+  $("fleet").innerHTML = `<div class="empty"><b>Luchtruim afluisteren…</b>Even geduld.</div>`;
+  history.replaceState(null, "", location.pathname);
+  load();
+});
+
+/* Scherm aan houden op een tablet */
+async function wake() { try { await navigator.wakeLock?.request("screen"); } catch (e) {} }
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { wake(); load(); } });
+
+let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => last && render(last), 150); });
+header(); load(); wake();
+setInterval(load, 30000);
+})();
+</script>
+</body>
+</html>

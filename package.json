@@ -1,0 +1,8 @@
+{
+  "name": "overhead",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wat vliegt er boven je huis: live vliegtuigen, getekend op schaal van hun spanwijdte.",
+  "type": "module",
+  "engines": { "node": ">=20" }
+}
