@@ -19,6 +19,7 @@ Op een tablet houdt de pagina het scherm wakker (waar de browser dat toelaat) en
 Extra's:
 
 - **Bijzondere toestellen** krijgen een label: *zeldzaam* (A380, 747, Beluga, transportvliegtuigen en meer), *nieuw type* (het eerste uur nadat een type voor het eerst boven je plek vloog, zodra het logboek een dag loopt) en *militair*.
+- **Waar moet ik kijken?** Onder elk toestel een kompaspijl met afstand en windrichting (bv. *12 km NO*), en of het nadert, wegtrekt of recht boven je hangt. Op brede schermen ook wanneer en op welke afstand het het dichtst komt.
 - **Logboek van vandaag** achter de knop *Vandaag*: aantal toestellen, types en maatschappijen, de grootste, hoogste en dichtstbijzijnde, en een lijst met het moment van dichtste nadering. Het wordt in de browser bijgehouden zolang de pagina openstaat.
 - **Hemel van nu**: de achtergrond kleurt mee met het uur (ochtendgloren, dag, schemering) en het weer (`api/sky.js`, Open-Meteo); 's nachts wordt de pagina donker en gedimd. Het weer staat ook in de kop. Instelbaar op hemel van nu, altijd wit of altijd donker.
 

@@ -58,6 +58,15 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding-block
 .cap .route{color:var(--muted)}
 .cap .meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:1px}
 .cap .alt{font-family:var(--mono);font-size:.92em;color:var(--muted);font-variant-numeric:tabular-nums}
+/* Waar moet ik kijken: kompaspijl, afstand en windrichting */
+.dir{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:.9em;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dir .rose{width:1.9em;height:1.9em;flex:none}
+.dir .rose circle{fill:color-mix(in srgb,var(--ink) 5%,transparent);stroke:color-mix(in srgb,var(--ink) 22%,transparent);stroke-width:1}
+.dir .rose path{fill:var(--ink)}
+.dir .rose text{font:700 4.6px var(--mono);fill:var(--muted)}
+.dir .st{font-family:var(--sans);font-size:.92em;color:var(--muted)}
+.dir.near .st{color:var(--climb)}
+.dir.over{color:var(--descend)}
 .trend{display:inline-flex;align-items:center;gap:3px;font-size:.88em;font-weight:500;padding:1px 7px 1px 5px;border-radius:99px;color:var(--c);background:color-mix(in srgb,var(--c) 11%,transparent)}
 .trend svg{width:1em;height:1em}
 .t-climb{--c:var(--climb)}.t-descend{--c:var(--descend)}.t-cruise{--c:var(--cruise)}.t-ground{--c:var(--ground)}
@@ -752,6 +761,34 @@ function cutout(url) {
   return "pending";
 }
 
+/* ---------- Waar moet ik kijken? ---------- */
+const WIND = ["N", "NNO", "NO", "ONO", "O", "OZO", "ZO", "ZZO", "Z", "ZZW", "ZW", "WZW", "W", "WNW", "NW", "NNW"];
+const windName = (b) => WIND[Math.round(((b % 360) + 360) % 360 / 22.5) % 16];
+function approach(a) {
+  // Hoek tussen de koers van het toestel en de richting van het toestel naar ons huis
+  if (a.track == null || a.gs == null || a.gs < 30 || a.onGround) return null;
+  const toHome = (a.bearing + 180) % 360;
+  const diff = ((a.track - toHome + 540) % 360) - 180, r = diff * Math.PI / 180;
+  const closing = a.dist * Math.cos(r); // km die nog in onze richting af te leggen zijn
+  const min = a.dist * Math.abs(Math.sin(r)); // afstand op het dichtste punt
+  const kmh = a.gs * 1.852;
+  return { coming: closing > 0.3, minDist: min, minutes: closing > 0 ? (closing / kmh) * 60 : 0 };
+}
+function dirHtml(a) {
+  if (a.bearing == null || a.dist == null) return "";
+  const km = a.dist < 10 ? a.dist.toFixed(1).replace(".", ",") : Math.round(a.dist);
+  const ap = approach(a);
+  const overhead = a.dist < 2.5;
+  let st = "";
+  if (overhead) st = "recht boven";
+  else if (ap && ap.coming) st = innerWidth >= 900 && ap.minutes >= 0.5 && ap.minutes < 30
+    ? `dichtst over ${Math.round(ap.minutes)} min op ${ap.minDist < 10 ? ap.minDist.toFixed(1).replace(".", ",") : Math.round(ap.minDist)} km`
+    : "nadert";
+  else if (ap) st = "trekt weg";
+  const rose = `<svg class="rose" viewBox="-12 -16 24 28" aria-hidden="true"><circle r="10.5"/><text x="0" y="-11.6" text-anchor="middle">N</text><g transform="rotate(${Math.round(a.bearing)})"><path d="M0 -7.6 4 4.6 0 2.4 -4 4.6Z"/></g></svg>`;
+  return `<span class="dir${ap && ap.coming ? " near" : ""}${overhead ? " over" : ""}" title="Kijk naar het ${windName(a.bearing)}">${rose}${overhead ? "" : `${km} km ${windName(a.bearing)}`}${st ? `<span class="st">${overhead ? "" : "· "}${st}</span>` : ""}</span>`;
+}
+
 /* ---------- Bijzondere toestellen ---------- */
 const RARE = new Set(["A388","B741","B742","B743","B744","B748","B74S","A124","A225","AN12","AN22","IL76","IL62","C17","C5M","B52","E3TF","E3CF","A3ST","A337","DC10","MD11","A342","A343","A345","A346","CONC","DC3","DC6","JU52","SPIT","B17","B29","P51","L188","A306","B703","K35R","KC2","A400","C130","C30J","B762","B764","A310","T204","SU95","U2","F22","B2"]);
 const STAR = '<svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 .8 7.6 4l3.6.5-2.6 2.5.6 3.6L6 8.9 2.8 10.6l.6-3.6L.8 4.5 4.4 4z"/></svg>';
@@ -917,7 +954,7 @@ function render(data) {
       : Illustrate.draw(a, a.sp, Math.max(k, minW / a.sp.len));
     return `<figure class="ac${shown.has(a.hex) ? "" : " new"}" style="--s:${s.toFixed(2)};margin:0">
       ${img}
-      <figcaption class="cap">${badgeHtml(a)}<b>${esc(name)}</b><span class="model">${esc(a.sp.model)}</span><span class="route">${esc(routeLine(a))}</span><span class="meta">${a.onGround || a.alt == null ? "" : `<span class="alt">${nf.format(Math.round(a.alt / 25) * 25)} ft</span>`}${trendPill(a)}</span>${usePhotos && a.photo?.by ? `<span class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></span>` : ""}</figcaption>
+      <figcaption class="cap">${badgeHtml(a)}<b>${esc(name)}</b><span class="model">${esc(a.sp.model)}</span><span class="route">${esc(routeLine(a))}</span>${dirHtml(a)}<span class="meta">${a.onGround || a.alt == null ? "" : `<span class="alt">${nf.format(Math.round(a.alt / 25) * 25)} ft</span>`}${trendPill(a)}</span>${usePhotos && a.photo?.by ? `<span class="credit">foto <a href="${esc(a.photo.link)}" target="_blank" rel="noopener">${esc(a.photo.by)}</a></span>` : ""}</figcaption>
     </figure>`;
   }).join("");
 
