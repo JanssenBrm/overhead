@@ -864,7 +864,7 @@ $("logbtn").addEventListener("click", openLog);
 /* ---------- Nachtstand volgens zonsopgang en -ondergang op de ingestelde plek ---------- */
 function sunTimes(date, lat, lon) { // lon = westerlengte, positief naar het westen
   const r = Math.PI / 180, J = date.getTime() / 86400000 + 2440587.5;
-  const n = Math.ceil(J - 2451545.0009 - lon / 360), Js = 2451545.0009 + lon / 360 + n;
+  const n = Math.round(J - 2451545.0009 - lon / 360), Js = 2451545.0009 + lon / 360 + n;
   const M = (357.5291 + 0.98560028 * (Js - 2451545)) % 360;
   const C = 1.9148 * Math.sin(M * r) + 0.02 * Math.sin(2 * M * r) + 0.0003 * Math.sin(3 * M * r);
   const L = (M + C + 180 + 102.9372) % 360;

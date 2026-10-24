@@ -82,8 +82,14 @@ a.back{color:var(--muted);font-size:14px}
           <button type="button" data-v="illustratie" aria-pressed="false">Illustraties</button>
         </div>
       </div>
-      <div class="field">Achtergrond
-        <div class="seg" role="group" aria-label="Achtergrond">
+      <div class="field">Decor
+        <div class="seg" role="group" aria-label="Decor">
+          <button type="button" data-d="straat" aria-pressed="true">Straat en hemel</button>
+          <button type="button" data-d="effen" aria-pressed="false">Effen</button>
+        </div>
+      </div>
+      <div class="field">Dag of nacht
+        <div class="seg" role="group" aria-label="Dag of nacht">
           <button type="button" data-n="auto" aria-pressed="true">Hemel van nu</button>
           <button type="button" data-n="uit" aria-pressed="false">Dag</button>
           <button type="button" data-n="aan" aria-pressed="false">Nacht</button>
@@ -103,7 +109,7 @@ a.back{color:var(--muted);font-size:14px}
 const $ = (id) => document.getElementById(id);
 let cfg = {};
 try { cfg = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
-const st = { o: "land", v: "schilderij", n: "auto" };
+const st = { o: "land", v: "schilderij", n: "auto", d: "straat" };
 try { Object.assign(st, JSON.parse(localStorage.getItem("overhead.frame") || "{}")); } catch (e) {}
 
 function params(extra = {}) {
@@ -114,6 +120,7 @@ function params(extra = {}) {
   if (st.o === "port") { p.set("w", 600); p.set("h", 1024); }
   if (st.v !== "schilderij") p.set("weergave", st.v);
   if (st.n !== "auto") p.set("nacht", st.n);
+  if (st.d !== "straat") p.set("decor", st.d);
   for (const [k, v] of Object.entries(extra)) p.set(k, v);
   return p;
 }
@@ -145,15 +152,17 @@ function sync() {
   document.querySelectorAll("[data-o]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.o === st.o));
   document.querySelectorAll("[data-v]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === st.v));
   document.querySelectorAll("[data-n]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.n === st.n));
+  document.querySelectorAll("[data-d]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.d === st.d));
   $("url").textContent = `${location.origin}/api/frame?${params({ format: "jpg" })}`;
   try { localStorage.setItem("overhead.frame", JSON.stringify(st)); } catch (e) {}
 }
 document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-o],[data-v],[data-n]");
+  const b = e.target.closest("[data-o],[data-v],[data-n],[data-d]");
   if (!b) return;
   if (b.dataset.o) st.o = b.dataset.o;
   if (b.dataset.v) st.v = b.dataset.v;
   if (b.dataset.n) st.n = b.dataset.n;
+  if (b.dataset.d) st.d = b.dataset.d;
   sync(); load();
 });
 $("copy").addEventListener("click", async () => {

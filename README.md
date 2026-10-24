@@ -42,6 +42,7 @@ Silhouetten worden getekend uit een tabel met ICAO-typecodes (spanwijdte, lengte
 - `w`, `h`: beeldgrootte (standaard 1024 × 600, staand `w=600&h=1024`)
 - `weergave`: `schilderij` (standaard) of `illustratie`
 - `nacht`: `auto` (volgt de zon op de plek), `aan` of `uit`
+- `decor`: `straat` (standaard) of `effen`. Met `straat` krijgt het beeld de hemel van nu (zon op haar echte plek, wolken volgens de bewolking, regen of sneeuw, 's nachts sterren en de maan in de juiste fase) en onderaan een willekeurige Kempense straat met dennen, huizen en een kerktoren, vast per locatie, met ramen die 's avonds aangaan (`lib/scenery.js`).
 - `format`: `png`, `jpg` (aanbevolen voor het scherm, ± 75 KB), `rgb565` (ruwe pixels, 1,2 MB per beeld: te groot voor het gratis dataverkeer), `rgb565be` of `svg`
 
 Headers: `X-Night` (1 's nachts, om de verlichting te dimmen), `X-Refresh` (aanbevolen wachttijd in seconden: 60 overdag, 900 's nachts), `X-Aircraft`.

@@ -6,6 +6,7 @@
 //   w, h                                    beeldgrootte in pixels (standaard 1024 × 600; staand: w=600&h=1024)
 //   weergave = schilderij | illustratie     standaard schilderij (valt terug op illustratie zolang er geen is)
 //   nacht    = auto | aan | uit             auto volgt zonsondergang en -opgang op de plek
+//   decor    = straat | effen               straat (standaard): hemel van nu met zon, wolken, sterren en maan, en een straat onderaan
 //   format   = png | jpg | rgb565 | rgb565be | svg
 //              Voor het scherm: jpg (± 75 KB). rgb565 is 1,2 MB per beeld en past niet in het gratis dataverkeer.
 //
@@ -23,6 +24,7 @@ import { waitUntil } from "@vercel/functions";
 import { Illustrate, T, spec } from "../lib/art.js";
 import { getAircraft } from "../lib/adsb.js";
 import { getWeather, condition, phase, skyColors } from "../lib/sky.js";
+import { scenery, defs as sceneryDefs, bandHeight } from "../lib/scenery.js";
 import { PREFIX, ensurePainting, paintingConfigured } from "../lib/painting.js";
 
 /* ---------- Lettertypes: dezelfde Geist als op de website ---------- */
@@ -289,6 +291,7 @@ async function render(q) {
   const place = String(q.plaats ?? (q.lat ? "" : "Dessel")).slice(0, 40);
   const title = String(q.titel || "Nu in de lucht").slice(0, 60);
   const view = q.weergave === "illustratie" ? "illustratie" : "schilderij";
+  const decor = q.decor === "effen" ? "effen" : "straat";
   const u = Math.min(W, H) / 600;
 
   const [data, wx] = await Promise.all([getAircraft(lat, lon, radius).catch((e) => ({ error: e })), getWeather(lat, lon)]);
@@ -325,7 +328,8 @@ async function render(q) {
 
   const pad = Math.round(26 * u);
   const headerH = 78 * u;
-  const area = { x: pad, y: pad + headerH, w: W - pad * 2, h: H - pad * 2 - headerH };
+  const band = decor === "straat" ? bandHeight(u) : 0; // ruimte voor de straat onderaan
+  const area = { x: pad, y: pad + headerH, w: W - pad * 2, h: H - pad * 2 - headerH - Math.max(0, band - pad * 0.6) };
 
   let best = null;
   if (order.length) {
@@ -351,6 +355,11 @@ async function render(q) {
   parts.push(`<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient>` +
     `<filter id="sh" x="-15%" y="-20%" width="130%" height="160%"><feDropShadow dx="0" dy="${n(5 * u)}" stdDeviation="${n(4.5 * u)}" flood-color="${theme.shadow[0]}" flood-opacity="${theme.shadow[1]}"/></filter></defs>`);
   parts.push(`<rect width="${W}" height="${H}" fill="url(#bg)"/>`);
+  if (decor === "straat") {
+    const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: tz }).format(now));
+    parts.push(`<defs>${sceneryDefs(u)}</defs>`);
+    parts.push(scenery({ W, H, u, lat, lon, now, night, phase: ph, cond, cloud: wx?.cloud ?? 40, hour }));
+  }
   parts.push(`<circle cx="${n(pad + 4 * u)}" cy="${n(pad + eFs * 0.62)}" r="${n(6.5 * u)}" fill="${theme.climb}" fill-opacity="0.18"/><circle cx="${n(pad + 4 * u)}" cy="${n(pad + eFs * 0.62)}" r="${n(3.5 * u)}" fill="${theme.climb}"/>`);
   parts.push(`<text x="${n(pad + 16 * u)}" y="${n(pad + eFs)}" ${fontAttrs("mono400")} font-size="${n(eFs)}" letter-spacing="${n(eFs * 0.12)}" fill="${theme.muted}">${esc(eyebrow)}<tspan letter-spacing="${n(eFs * 0.02)}">${esc(wxText)}</tspan></text>`);
   parts.push(`<text x="${pad}" y="${n(pad + eFs + 10 * u + tFs * 0.85)}" ${fontAttrs("sans600")} font-size="${n(tFs)}" letter-spacing="${n(-tFs * 0.025)}" fill="${theme.ink}">${esc(title)}</text>`);
