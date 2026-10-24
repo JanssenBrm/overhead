@@ -5,6 +5,12 @@
   "functions": {
     "api/painting.js": {
       "maxDuration": 60
+    },
+    "api/frame.js": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "fonts/**"
     }
-  }
+  },
+  "cleanUrls": true
 }

@@ -31,6 +31,25 @@ Extra's:
 
 Silhouetten worden getekend uit een tabel met ICAO-typecodes (spanwijdte, lengte, vorm). Onbekende types vallen terug op de ADS-B-categorie.
 
+## Scherm in een lijst (`/frame`)
+
+`api/frame.js` tekent het volledige scherm op de server als één beeld, voor een ESP32-scherm in een fotolijst (bv. een 10,1"-scherm van 1024 × 600). Dezelfde illustraties, schilderijen, kompas, labels en hemelkleur als de website, maar zonder browser: SVG met [resvg](https://github.com/yisibl/resvg-js), lettertype Geist (OFL, in `fonts/`).
+
+```
+/api/frame?lat=51.2387&lon=5.1159&straal=40&plaats=Dessel&titel=Nu%20in%20de%20lucht&w=1024&h=600&format=rgb565
+```
+
+- `w`, `h`: beeldgrootte (standaard 1024 × 600, staand `w=600&h=1024`)
+- `weergave`: `schilderij` (standaard) of `illustratie`
+- `nacht`: `auto` (volgt de zon op de plek), `aan` of `uit`
+- `format`: `png`, `jpg`, `rgb565` (ruwe pixels, little-endian), `rgb565be` of `svg`
+
+Headers: `X-Night` (1 's nachts, om de verlichting te dimmen), `X-Refresh` (aanbevolen wachttijd in seconden), `X-Aircraft`.
+
+De pagina `/frame` toont het beeld in een lijst, met de instellingen van de live pagina, en geeft het adres voor het scherm.
+
+De tekencode in `lib/art.js` is een kopie van die in `index.html`: pas beide aan.
+
 ## Lokaal draaien
 
 ```

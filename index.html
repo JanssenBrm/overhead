@@ -782,7 +782,7 @@ function dirHtml(a) {
   let st = "";
   if (overhead) st = "recht boven";
   else if (ap && ap.coming) st = innerWidth >= 900 && ap.minutes >= 0.5 && ap.minutes < 30
-    ? `dichtst over ${Math.round(ap.minutes)} min op ${ap.minDist < 10 ? ap.minDist.toFixed(1).replace(".", ",") : Math.round(ap.minDist)} km`
+    ? (ap.minDist < 1 ? `over ${Math.round(ap.minutes)} min recht boven` : `dichtst over ${Math.round(ap.minutes)} min op ${ap.minDist < 10 ? ap.minDist.toFixed(1).replace(".", ",") : Math.round(ap.minDist)} km`)
     : "nadert";
   else if (ap) st = "trekt weg";
   const rose = `<svg class="rose" viewBox="-12 -16 24 28" aria-hidden="true"><circle r="10.5"/><text x="0" y="-11.6" text-anchor="middle">N</text><g transform="rotate(${Math.round(a.bearing)})"><path d="M0 -7.6 4 4.6 0 2.4 -4 4.6Z"/></g></svg>`;
