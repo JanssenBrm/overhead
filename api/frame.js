@@ -7,6 +7,7 @@
 //   weergave = schilderij | illustratie     standaard schilderij (valt terug op illustratie zolang er geen is)
 //   nacht    = auto | aan | uit             auto volgt zonsondergang en -opgang op de plek
 //   format   = png | jpg | rgb565 | rgb565be | svg
+//              Voor het scherm: jpg (± 75 KB). rgb565 is 1,2 MB per beeld en past niet in het gratis dataverkeer.
 //
 // Antwoordheaders voor het scherm
 //   X-Night: 1 of 0          zodat het scherm 's nachts de verlichting kan dimmen of doven
@@ -126,7 +127,8 @@ async function makeCutout(buf) {
 
 async function cutout(key) {
   const hit = cutMem.get(key);
-  if (hit && (hit.value || Date.now() - hit.at < 2 * 60e3)) return hit.value;
+  // Ontbrekende schilderijen pas na een uur opnieuw nakijken (of zodra ensurePainting er een maakte)
+  if (hit && (hit.value || Date.now() - hit.at < 60 * 60e3)) return hit.value;
   let buf = await readBlob(`${CUT_PREFIX}${key}.png`);
   if (!buf) {
     const orig = await readBlob(`${PREFIX}${key}.png`);
@@ -309,7 +311,8 @@ async function render(q) {
       if (a.cut) a.uri = a.cut.uri;
       else if (started++ < 2) {
         const [type, op] = key.split("-");
-        waitUntil(ensurePainting({ type, op: op === "GEN" ? "" : op, model: a.sp.model, airline: a.airline || a.operator || "", mil: !!Illustrate.livery(a, a.sp).mil }).catch(() => {}));
+        waitUntil(ensurePainting({ type, op: op === "GEN" ? "" : op, model: a.sp.model, airline: a.airline || a.operator || "", mil: !!Illustrate.livery(a, a.sp).mil })
+          .then((r) => { if (r && r.url) cutMem.delete(key); }).catch(() => {}));
       }
     }));
   }
@@ -382,7 +385,8 @@ export default async function handler(req, res) {
     const out = await render(q);
     const fmt = String(q.format || "png").toLowerCase();
     res.setHeader("X-Night", out.night ? "1" : "0");
-    res.setHeader("X-Refresh", out.error ? "30" : "60");
+    // 's Nachts staat het scherm gedimd: om het kwartier volstaat, dat spaart rekentijd en dataverkeer
+    res.setHeader("X-Refresh", out.error ? "30" : out.night ? "900" : "60");
     res.setHeader("X-Aircraft", String(out.count));
     res.setHeader("Access-Control-Expose-Headers", "X-Night, X-Refresh, X-Aircraft");
     res.setHeader("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");

@@ -25,6 +25,11 @@ export default async function handler(req, res) {
       return;
     }
     const out = await ensurePainting({ type, op, model: q.model, airline: q.airline, mil: q.mil === "1" });
+    if (out.failed) {
+      res.setHeader("Cache-Control", "public, s-maxage=600");
+      res.status(200).json({ url: null, reason: "error" });
+      return;
+    }
     if (out.limit) {
       res.setHeader("Cache-Control", "public, s-maxage=600");
       res.status(200).json({ url: null, reason: "limit" });

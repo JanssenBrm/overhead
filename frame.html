@@ -94,7 +94,7 @@ a.back{color:var(--muted);font-size:14px}
     <div class="field">Adres voor het scherm
       <div class="url"><code id="url"></code><button class="btn" id="copy" type="button">Kopieer</button></div>
     </div>
-    <p class="hint">Het scherm haalt dit beeld elke minuut op. Plaats, straal en titel komen uit de instellingen van de <a href="/">live pagina</a> op dit toestel. Voor het ESP32-scherm gebruikt het adres <b>format=rgb565</b>: ruwe pixels die het scherm zonder omrekenen kan tonen. De antwoordheader <b>X-Night</b> zegt het scherm wanneer het 's nachts de verlichting mag dimmen.</p>
+    <p class="hint">Het scherm haalt dit beeld overdag elke minuut op en 's nachts om het kwartier. Plaats, straal en titel komen uit de instellingen van de <a href="/">live pagina</a> op dit toestel. Voor het ESP32-scherm gebruikt het adres <b>format=jpg</b> (± 75 KB per beeld), dat de ESP32 zelf uitpakt. De antwoordheader <b>X-Night</b> zegt het scherm wanneer het 's nachts de verlichting mag dimmen.</p>
   </section>
 </div>
 
@@ -145,7 +145,7 @@ function sync() {
   document.querySelectorAll("[data-o]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.o === st.o));
   document.querySelectorAll("[data-v]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === st.v));
   document.querySelectorAll("[data-n]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.n === st.n));
-  $("url").textContent = `${location.origin}/api/frame?${params({ format: "rgb565" })}`;
+  $("url").textContent = `${location.origin}/api/frame?${params({ format: "jpg" })}`;
   try { localStorage.setItem("overhead.frame", JSON.stringify(st)); } catch (e) {}
 }
 document.addEventListener("click", (e) => {
