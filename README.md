@@ -26,7 +26,7 @@ Extra's:
 ## Hoe het werkt
 
 - `index.html`: de volledige pagina inclusief de tekencode voor de illustraties, zonder build-stap.
-- `api/aircraft.js`: Vercel-functie die posities ophaalt bij [adsb.lol](https://adsb.lol) (met [adsb.fi](https://adsb.fi) als reserve) en routes aanvult via [adsbdb](https://www.adsbdb.com).
+- `api/aircraft.js`: Vercel-functie die posities ophaalt bij [adsb.lol](https://adsb.lol) (met [adsb.fi](https://adsb.fi) als reserve) en routes aanvult via de routedatabank van adsb.lol/adsb.im (met [adsbdb](https://www.adsbdb.com) als reserve). Elke route wordt getoetst aan positie en koers: past ze niet, dan toont de site "route onbekend" in plaats van een foute route.
 - `api/geocode.js`: plaatsnamen zoeken via [Open-Meteo](https://open-meteo.com).
 
 Silhouetten worden getekend uit een tabel met ICAO-typecodes (spanwijdte, lengte, vorm). Onbekende types vallen terug op de ADS-B-categorie.
