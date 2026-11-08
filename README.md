@@ -70,7 +70,9 @@ Nodig in Vercel (Settings › Environment Variables):
 - `BLOB_READ_WRITE_TOKEN`: komt er vanzelf bij als je een Blob-opslag aan het project koppelt (Storage › Create › Blob)
 - en één beeldbron:
   - **gratis:** `CLOUDFLARE_ACCOUNT_ID` en `CLOUDFLARE_API_TOKEN` (Workers AI, FLUX.1 [schnell]; 10.000 neurons per dag gratis). Heeft voorrang als beide bronnen ingesteld zijn.
-  - **betalend:** `GEMINI_API_KEY` van Google AI Studio (beeldgeneratie heeft geen gratis tier)
+  - **betalend, beter in de kleuren van maatschappijen:** `GEMINI_API_KEY` van Google AI Studio (geen gratis tier; ± $0,034 per beeld, eenmalig per type en maatschappij)
+
+Zijn beide ingesteld, dan kiest `PAINT_SOURCE` (`gemini` of `cloudflare`); zonder keuze heeft Cloudflare voorrang. De opdracht bevat de hoofdkleuren van de maatschappij uit dezelfde tabel als de illustraties.
 
 Optioneel: `DAILY_PAINT_LIMIT` (standaard 30 per dag), `GEMINI_IMAGE_MODEL` (standaard `gemini-nano-banana-2.1`), `PAINT_STYLE`.
 

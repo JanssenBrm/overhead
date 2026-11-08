@@ -1,5 +1,6 @@
 // GET /api/painting-img?key=A320-BEL -> het bewaarde schilderij uit de privé Blob-opslag
 import { get } from "@vercel/blob";
+import { PREFIX } from "../lib/painting.js";
 import { Readable } from "node:stream";
 
 export default async function handler(req, res) {
@@ -9,7 +10,7 @@ export default async function handler(req, res) {
     return;
   }
   try {
-    const r = await get(`paintings/v1/${key}.png`, { access: "private" });
+    const r = await get(`${PREFIX}${key}.png`, { access: "private" });
     if (!r || r.statusCode !== 200) {
       res.setHeader("Cache-Control", "public, s-maxage=60");
       res.status(404).end();

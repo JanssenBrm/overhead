@@ -90,7 +90,7 @@ function routeText(a, maxW, size) {
 }
 
 /* ---------- Schilderijen: uitknippen (achtergrond doorzichtig, lege rand weg) en bewaren ---------- */
-const CUT_PREFIX = "paintings/cut-v1/"; // bewust buiten PREFIX, zodat de daglimiet niet meetelt
+const CUT_PREFIX = "paintings/cut-v2/"; // bewust buiten PREFIX, zodat de daglimiet niet meetelt
 const cutMem = new Map(); // sleutel -> { at, value }
 
 async function readBlob(path) {

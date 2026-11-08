@@ -477,7 +477,7 @@ body.night .btn{background:var(--ink);color:var(--bg);border-color:var(--ink)}
     return `<svg class="illu" width="${n(w * k)}" height="${n(h * k)}" viewBox="${n(x0 - pad)} ${n(y0 - pad)} ${n(w)} ${n(h)}" role="img" aria-label="${(sp.model || "").replace(/"/g, "")}">${inner}</svg>`;
   }
 
-  window.Illustrate = { draw, livery };
+  window.Illustrate = { draw, livery, LIVERY };
 })();
 </script>
 <script>
@@ -869,7 +869,7 @@ async function fetchPhoto(hex) {
 
 /* ---------- Schilderijen via onze server (Gemini), één per type + maatschappij ---------- */
 const paints = new Map(); // sleutel -> url of null
-try { const c = JSON.parse(localStorage.getItem("overhead.paints") || "{}"); for (const [k2, v] of Object.entries(c)) paints.set(k2, v); } catch (e) {}
+try { const c = JSON.parse(localStorage.getItem("overhead.paints2") || "{}"); for (const [k2, v] of Object.entries(c)) paints.set(k2, v); } catch (e) {}
 let paintOff = false, paintBusy = false; const paintQ = [];
 function paintKey(a) {
   if (!a.type || !T[a.type]) return null;
@@ -891,7 +891,7 @@ async function pumpPaint() {
     const r = await fetch(`/api/painting?${qs}`);
     const j = await r.json();
     if (j.reason === "not-configured") paintOff = true;
-    else if (j.url) { paints.set(k2, j.url); try { localStorage.setItem("overhead.paints", JSON.stringify(Object.fromEntries(paints))); } catch (e) {} if (last) render(last); }
+    else if (j.url) { paints.set(k2, j.url); try { localStorage.setItem("overhead.paints2", JSON.stringify(Object.fromEntries(paints))); } catch (e) {} if (last) render(last); }
     else if (j.reason === "limit") paintOff = true; // daglimiet bereikt: vandaag niets nieuws meer vragen
   } catch (e) {}
   paintBusy = false;
