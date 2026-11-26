@@ -51,6 +51,24 @@ Headers: `X-Night` (1 's nachts, om de verlichting te dimmen), `X-Refresh` (aanb
 
 Gemeten: ± 0,17 s rekentijd en ± 75 KB per beeld (jpg). Met één scherm (overdag elke minuut, 's nachts om het kwartier) is dat ruwweg 1,5 CPU-uur en 2 GB dataverkeer per maand, binnen de 4 CPU-uur en 10 GB Fast Origin Transfer van het Hobby-plan. De schilderijlogica vermijdt `list()` (gratis: 2.000 handelingen per maand) en onthoudt ontbrekende schilderijen een uur.
 
+### Software voor het scherm (`firmware/`)
+
+ESP-IDF-project voor het Elecrow CrowPanel Advanced 10,1" (ESP32-P4, wifi via de ingebouwde ESP32-C6). Het scherm haalt `/api/frame` als jpg op, decodeert het met de jpg-decoder van de P4, wacht `X-Refresh` seconden en dimt de verlichting als `X-Night` 1 is. Zonder wifi zet het een toegangspunt `Overhead-scherm` op met een instelpagina op `http://192.168.4.1`; 5 seconden aanraken vergeet de wifi. Om de 6 uur kijkt het naar `/fw/<variant>/version.txt` en installeert het een nieuwere versie zelf (met terugval naar de vorige als de nieuwe niet werkt).
+
+Installeren gebeurt in de browser op `/installeer` (Chrome of Edge, via USB): de pagina herkent de chip, zet de juiste software erop ([ESP Web Tools](https://esphome.github.io/esp-web-tools/)), vraagt de wifi (Improv) en kan het adres van het beeld doorsturen.
+
+Er zijn twee varianten, omdat borden V2.0 een nieuwere chip hebben (ESP32-P4 v3.x) die andere software nodig heeft dan V1.x-borden (v1.x): `rev3` en `rev1`.
+
+Bouwen (ESP-IDF v5.5.4):
+
+```
+cd firmware
+. $IDF_PATH/export.sh
+tools/build.sh 1.0.1      # haalt de componenten op, bouwt beide varianten naar ../fw/
+```
+
+Een nieuwe versie uitrollen: versienummer verhogen, bouwen, `fw/` committen en pushen. De schermen nemen ze binnen zes uur over.
+
 De pagina `/frame` toont het beeld in een lijst, met de instellingen van de live pagina, en geeft het adres voor het scherm.
 
 De tekencode in `lib/art.js` en het decor in `lib/scenery.js` staan ook als kopie in `index.html`: pas beide aan.

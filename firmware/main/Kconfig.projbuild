@@ -1,0 +1,11 @@
+menu "Overhead"
+    config OVERHEAD_VERSION
+        string "Firmwareversie"
+        default "1.0.0"
+    config OVERHEAD_VARIANT
+        string "Variant (map op de site: rev1 voor chips voor v3, rev3 vanaf v3)"
+        default "rev1"
+    config OVERHEAD_DEFAULT_URL
+        string "Adres van het beeld als er niets ingesteld is"
+        default "https://overhead-liart.vercel.app/api/frame?lat=51.2387&lon=5.1159&straal=40&plaats=Dessel&w=1024&h=600"
+endmenu

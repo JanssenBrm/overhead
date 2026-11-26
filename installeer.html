@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Overhead · scherm installeren</title>
+<meta name="description" content="Zet de Overhead-software via USB op het ESP32-P4-scherm en stel de wifi in.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+:root{
+  --wall:#e9e6e1; --ink:#111316; --muted:#6a717a; --line:#d8d4cd; --card:#f6f4f0; --ok:#1f7a4a; --warn:#a4561a; --accent:#2f62c9;
+  --sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--wall);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.page{max-width:760px;margin:0 auto;padding-block:clamp(16px,4vh,48px) 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(24px,3vw,34px);font-weight:600;letter-spacing:-.02em;margin:4px 0 0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+a{color:var(--accent)}
+a.back{color:var(--muted);font-size:14px}
+.intro{margin:0;color:var(--muted);line-height:1.55;max-width:62ch}
+.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;display:grid;grid-template-columns:36px minmax(0,1fr);gap:4px 14px}
+.step > :not(.num){grid-column:2;min-width:0}
+.num{grid-row:1;width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font:600 14px var(--sans)}
+.step.done .num{background:var(--ok)}
+h2{font-size:18px;font-weight:600;margin:3px 0 4px}
+.step p{margin:0 0 12px;color:var(--muted);line-height:1.5}
+.step p b{color:var(--ink);font-weight:500}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{font:500 15px var(--sans);padding:10px 18px;border-radius:10px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.status{font:13px var(--mono);color:var(--muted)}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn)}
+select{font:15px var(--sans);padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+code{font:13px var(--mono);background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+.url{display:block;margin:0 0 12px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.note{background:#fff7e8;border:1px solid #ecd3a8;border-radius:12px;padding:14px 16px;color:#5b4318;line-height:1.5;margin:0}
+details{color:var(--muted);line-height:1.5}
+summary{cursor:pointer;color:var(--ink);font-weight:500}
+esp-web-install-button button[slot]{font:500 15px var(--sans);padding:10px 18px;border-radius:10px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <div class="eyebrow">Overhead · scherm installeren</div>
+      <h1>De software op het scherm zetten</h1>
+    </div>
+    <a class="back" href="/frame">Naar het beeld voor het scherm</a>
+  </header>
+
+  <p class="intro">Voor het CrowPanel Advanced 10,1" (ESP32-P4). Dit gebeurt rechtstreeks vanuit deze pagina via USB, er hoeft niets geïnstalleerd te worden. Daarna haalt het scherm zelf zijn beeld en zijn updates op via de wifi.</p>
+
+  <p class="note" id="nobrowser" hidden>Deze browser kan niet met USB-apparaten praten. Open deze pagina in <b>Chrome</b> of <b>Edge</b> op een computer (Windows, Mac of Linux).</p>
+
+  <section class="step" id="s1">
+    <div class="num">1</div>
+    <h2>Aansluiten</h2>
+    <p>Verbind het scherm met de computer via de USB-C-poort waar <b>UART</b> bij staat, met een kabel die data doorgeeft (de meegeleverde kabel werkt). Zie je bij de volgende stap geen poort verschijnen, probeer dan de andere USB-C-poort of een andere kabel. Op een Mac kan het nodig zijn de <a href="https://www.wch-ic.com/downloads/CH34XSER_MAC_ZIP.html" target="_blank" rel="noopener">CH340-driver</a> te installeren.</p>
+  </section>
+
+  <section class="step" id="s2">
+    <div class="num">2</div>
+    <h2>Het bord herkennen</h2>
+    <p>Er bestaan borden met een oudere (V1.x) en een nieuwere chip (V2.0). Die hebben elk hun eigen software. Deze stap leest uit welke chip erop zit.</p>
+    <div class="row">
+      <button class="btn" id="detect" type="button">Bord herkennen</button>
+      <span class="status" id="chip">Nog niet herkend</span>
+    </div>
+    <details style="margin-top:12px">
+      <summary>Zelf kiezen</summary>
+      <p style="margin-top:8px">Staat op de printplaat <b>V2.0</b>, kies dan de nieuwe chip. Bij <b>V1.0 tot V1.3</b> de oudere.</p>
+      <select id="variant" aria-label="Variant">
+        <option value="">Kies…</option>
+        <option value="rev3">V2.0 (ESP32-P4 v3.x)</option>
+        <option value="rev1">V1.x (ESP32-P4 v1.x)</option>
+      </select>
+    </details>
+  </section>
+
+  <section class="step" id="s3">
+    <div class="num">3</div>
+    <h2>Installeren en wifi instellen</h2>
+    <p>Kies in het venster <b>Install Overhead-scherm</b>, en laat het scherm eerst leegmaken (<b>Erase</b>) als het de eerste keer is. Het duurt een minuut. Daarna vraagt het venster om de wifi: kies het netwerk van het huis en vul het wachtwoord in.</p>
+    <div class="row">
+      <esp-web-install-button id="install" hidden>
+        <button slot="activate" type="button">Installeren</button>
+        <span slot="unsupported">Gebruik Chrome of Edge op een computer.</span>
+        <span slot="not-allowed">Open deze pagina via https.</span>
+      </esp-web-install-button>
+      <span class="status" id="installhint">Eerst stap 2.</span>
+    </div>
+    <details style="margin-top:12px">
+      <summary>Wifi later of elders instellen</summary>
+      <p style="margin-top:8px">Zonder wifi toont het scherm zelf de uitleg: verbind je gsm met het netwerk <code>Overhead-scherm</code> en surf naar <code>http://192.168.4.1</code>. Verhuist het scherm naar een ander huis, houd het dan 5 seconden aangeraakt: het vergeet de wifi en toont die uitleg opnieuw.</p>
+    </details>
+  </section>
+
+  <section class="step" id="s4">
+    <div class="num">4</div>
+    <h2>Plaats doorgeven</h2>
+    <p>Het scherm toont standaard de lucht boven Dessel. Om de plaats, straal en titel van de <a href="/">live pagina</a> op deze computer te gebruiken, stuur je dit adres naar het scherm:</p>
+    <code class="url" id="url"></code>
+    <div class="row">
+      <button class="btn" id="sendurl" type="button">Naar het scherm sturen</button>
+      <span class="status" id="urlstatus"></span>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="https://unpkg.com/esp-web-tools@10.5.2/dist/web/install-button.js?module"></script>
+<script type="module">
+import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.7.1/bundle.js";
+
+const $ = (id) => document.getElementById(id);
+const hasSerial = "serial" in navigator;
+if (!hasSerial) {
+  $("nobrowser").hidden = false;
+  for (const id of ["detect", "sendurl"]) $(id).disabled = true;
+}
+
+/* ---------- Stap 2: chiprevisie lezen met esptool-js ---------- */
+function choose(v, why) {
+  $("variant").value = v;
+  const btn = $("install");
+  btn.setAttribute("manifest", `/fw/${v}/manifest.json`);
+  btn.hidden = false;
+  $("installhint").textContent = v === "rev3" ? "Software voor V2.0-borden" : "Software voor V1.x-borden";
+  $("s2").classList.add("done");
+  if (why) { $("chip").textContent = why; $("chip").className = "status ok"; }
+}
+$("variant").addEventListener("change", (e) => e.target.value && choose(e.target.value, "Zelf gekozen"));
+
+$("detect").addEventListener("click", async () => {
+  let transport;
+  const quiet = { clean() {}, writeLine() {}, write() {} };
+  try {
+    const port = await navigator.serial.requestPort();
+    $("chip").textContent = "Verbinden…"; $("chip").className = "status";
+    transport = new Transport(port, false);
+    const loader = new ESPLoader({ transport, baudrate: 115200, romBaudrate: 115200, terminal: quiet });
+    await loader.detectChip("default_reset");
+    const desc = await loader.chip.getChipDescription(loader);
+    if (!/ESP32-P4/.test(desc)) {
+      $("chip").textContent = `Dit is een ${desc}, geen ESP32-P4.`; $("chip").className = "status warn";
+      return;
+    }
+    const rev = await loader.chip.getChipRevision(loader);
+    try { await loader.after("hard_reset"); } catch (e) {}
+    choose(rev >= 300 ? "rev3" : "rev1", desc);
+  } catch (e) {
+    if (e && e.name === "NotFoundError") { $("chip").textContent = "Geen poort gekozen."; }
+    else { $("chip").textContent = "Herkennen lukte niet. Houd BOOT ingedrukt, druk kort op RESET, laat BOOT los en probeer opnieuw. Of kies zelf hieronder."; }
+    $("chip").className = "status warn";
+    console.error(e);
+  } finally {
+    try { await transport?.disconnect(); } catch (e) {}
+  }
+});
+
+/* ---------- Stap 4: adres van het beeld via de seriële poort ---------- */
+let cfg = {};
+try { cfg = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
+const fr = {};
+try { Object.assign(fr, JSON.parse(localStorage.getItem("overhead.frame") || "{}")); } catch (e) {}
+const p = new URLSearchParams();
+p.set("lat", cfg.lat ?? 51.2387); p.set("lon", cfg.lon ?? 5.1159); p.set("straal", cfg.radius ?? 40);
+p.set("plaats", cfg.place ?? (cfg.lat ? "" : "Dessel"));
+if (cfg.title) p.set("titel", cfg.title);
+if (fr.v && fr.v !== "schilderij") p.set("weergave", fr.v);
+if (fr.n && fr.n !== "auto") p.set("nacht", fr.n);
+if (fr.d && fr.d !== "straat") p.set("decor", fr.d);
+// Het scherm werkt liggend (1024 x 600): geen w/h meegeven
+const frameUrl = `${location.origin}/api/frame?${p}`;
+$("url").textContent = frameUrl;
+
+$("sendurl").addEventListener("click", async () => {
+  const st = $("urlstatus");
+  let port, reader;
+  try {
+    port = (await navigator.serial.getPorts())[0] || (await navigator.serial.requestPort());
+    await port.open({ baudRate: 115200 });
+    // Openen kan het bord herstarten: wachten tot de software draait
+    await port.setSignals({ dataTerminalReady: false, requestToSend: false }).catch(() => {});
+    st.textContent = "Wachten op het scherm…"; st.className = "status";
+    reader = port.readable.getReader();
+    const dec = new TextDecoder();
+    let log = "";
+    let pending = null; // één lopende read, zodat er geen data verloren gaat
+    const until = async (re, ms) => {
+      const end = Date.now() + ms;
+      while (Date.now() < end) {
+        if (re.test(log)) return true;
+        pending ??= reader.read();
+        const r = await Promise.race([pending, new Promise((ok) => setTimeout(() => ok(null), 500))]);
+        if (!r) continue;
+        pending = null;
+        if (r.value) log = (log + dec.decode(r.value, { stream: true })).slice(-4000);
+        if (r.done) break;
+      }
+      return re.test(log);
+    };
+    await until(/Overhead-scherm|beeld:|wifi|IMPROV/, 8000); // draait het al, dan komt er misschien niets: gewoon sturen
+    const w = port.writable.getWriter();
+    await w.write(new TextEncoder().encode(`\nOVERHEAD-URL ${frameUrl}\n`));
+    w.releaseLock();
+    if (await until(/OVERHEAD-OK/, 5000)) {
+      st.textContent = "Bewaard. Het scherm herstart met deze plaats."; st.className = "status ok";
+      $("s4").classList.add("done");
+    } else if (/OVERHEAD-ERR/.test(log)) {
+      st.textContent = "Het scherm weigerde het adres."; st.className = "status warn";
+    } else {
+      st.textContent = "Geen antwoord. Is stap 3 klaar en het installatievenster gesloten?"; st.className = "status warn";
+    }
+  } catch (e) {
+    st.textContent = e && e.name === "NotFoundError" ? "Geen poort gekozen." : "Verbinden lukte niet. Sluit het installatievenster en probeer opnieuw.";
+    st.className = "status warn";
+    console.error(e);
+  } finally {
+    try { await reader?.cancel(); } catch (e) {}
+    try { reader?.releaseLock(); } catch (e) {}
+    try { await port?.close(); } catch (e) {}
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+# Borden V2.0: ESP32-P4 chiprevisie v3.x
+# CONFIG_ESP32P4_SELECTS_REV_LESS_V3 is not set
+CONFIG_OVERHEAD_VARIANT="rev3"
