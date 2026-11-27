@@ -29,8 +29,9 @@ import { PREFIX, ensurePainting, paintingConfigured } from "../lib/painting.js";
 
 /* ---------- Lettertypes: dezelfde Geist als op de website ---------- */
 const FONT_FILES = {
-  sans300: "Geist-Light.ttf", sans400: "Geist-Regular.ttf", sans500: "Geist-Medium.ttf", sans600: "Geist-SemiBold.ttf",
-  mono400: "GeistMono-Regular.ttf", mono500: "GeistMono-Medium.ttf",
+  // Op het echte scherm (IPS, 1024 x 600) worden dunne letters bleek en vaag: alles één gewicht zwaarder
+  sans300: "Geist-Regular.ttf", sans400: "Geist-Medium.ttf", sans500: "Geist-SemiBold.ttf", sans600: "Geist-SemiBold.ttf",
+  mono400: "GeistMono-Medium.ttf", mono500: "GeistMono-Medium.ttf",
 };
 const fontPath = (f) => fileURLToPath(new URL(`../fonts/${f}`, import.meta.url));
 const FONT_PATHS = Object.values(FONT_FILES).map(fontPath);
@@ -50,8 +51,9 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const nf = new Intl.NumberFormat("nl-BE");
 
 const THEMES = {
-  day: { ink: "#111316", muted: "#6a717a", faint: "#9aa1a9", line: "#e7e9ec", climb: "#16884a", descend: "#c26a06", cruise: "#2f62c9", ground: "#6a717a", shadow: ["#111316", 0.13] },
-  night: { ink: "#e3e6ea", muted: "#8a929b", faint: "#5b636c", line: "#23282e", climb: "#5fd08e", descend: "#f0a54a", cruise: "#7fa6ff", ground: "#8a929b", shadow: ["#000000", 0.45] },
+  // Donkerder dan op de website: het scherm toont grijstinten veel lichter dan een computerscherm
+  day: { ink: "#0b0d10", muted: "#3a4048", faint: "#5f666e", line: "#d9dde2", climb: "#0d6b37", descend: "#9c4f00", cruise: "#1d4bb0", ground: "#3a4048", shadow: ["#111316", 0.13] },
+  night: { ink: "#f1f3f5", muted: "#b4bbc3", faint: "#7d858e", line: "#2c323a", climb: "#6fe09c", descend: "#ffb45c", cruise: "#9dbbff", ground: "#b4bbc3", shadow: ["#000000", 0.45] },
 };
 
 /* ---------- Bijzondere toestellen (zelfde lijst als de website) ---------- */
@@ -176,7 +178,7 @@ function measure(a, k, u, maxCap, theme) {
     img = { kind: "illu", ...il };
   }
   const s = clamp(img.w / (260 * u), 0.85, 1.25) * u;
-  const fs = 12.5 * s;
+  const fs = 14 * s;
   const capMax = Math.max(img.w, maxCap);
   const lines = [];
   const b = badge(a, sp);
@@ -348,7 +350,7 @@ async function render(q) {
   const date = new Intl.DateTimeFormat("nl-BE", { weekday: "short", day: "numeric", month: "short", timeZone: tz }).format(now).replace(/\./g, "").toUpperCase();
   const eyebrow = `${place ? place.toUpperCase() + " · " : ""}${radius} KM`;
   const wxText = wx ? ` · ${Math.round(wx.temp)}° ${night && cond === "helder" ? "heldere nacht" : cond}` : "";
-  const eFs = 12 * u, tFs = 34 * u, cFs = 52 * u;
+  const eFs = 14 * u, tFs = 34 * u, cFs = 52 * u;
 
   const parts = [];
   parts.push(`<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
