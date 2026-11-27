@@ -10,6 +10,7 @@
 //  Kort tikken elders: balk voor de helderheid (links donkerder, rechts lichter).
 //  Lang (5 s) aanraken: wifi vergeten en herstarten met het portaal.
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include "app.h"
 #include "esp_log.h"
@@ -111,6 +112,26 @@ static bool open_hotspot(int x, int y)
     return hit;
 }
 
+// Antwoordheaders van de server. Let op: esp_http_client_get_header leest de headers van het VERZOEK;
+// die van het antwoord komen alleen binnen via HTTP_EVENT_ON_HEADER.
+typedef struct {
+    int refresh, bright;
+    bool night;
+    char hs[1024];
+    bool has_hs;
+} reply_t;
+
+static esp_err_t on_http(esp_http_client_event_t *e)
+{
+    reply_t *r = e->user_data;
+    if (e->event_id != HTTP_EVENT_ON_HEADER || !r || !e->header_key || !e->header_value) return ESP_OK;
+    if (!strcasecmp(e->header_key, "X-Refresh")) r->refresh = atoi(e->header_value);
+    else if (!strcasecmp(e->header_key, "X-Night")) r->night = e->header_value[0] == '1';
+    else if (!strcasecmp(e->header_key, "X-Brightness")) r->bright = atoi(e->header_value);
+    else if (!strcasecmp(e->header_key, "X-Hotspots")) { strlcpy(r->hs, e->header_value, sizeof(r->hs)); r->has_hs = true; }
+    return ESP_OK;
+}
+
 // Haalt het beeld op in de invoerbuffer van de decoder. Geeft de lengte terug (0 bij een fout).
 static size_t fetch(int *refresh, bool *night, int *bright)
 {
@@ -122,6 +143,10 @@ static size_t fetch(int *refresh, bool *night, int *bright)
     strlcat(url, page_q, sizeof(url));
     xSemaphoreGive(page_lock);
 
+    static reply_t rep;
+    memset(&rep, 0, sizeof(rep));
+    rep.refresh = *refresh;
+    rep.bright = -1;
     size_t cap;
     uint8_t *buf = display_jpeg_buffer(&cap);
     esp_http_client_config_t c = {
@@ -131,24 +156,23 @@ static size_t fetch(int *refresh, bool *night, int *bright)
         .buffer_size = 4096,
         .buffer_size_tx = 2048, // de url kan lang zijn
         .user_agent = "overhead-scherm/" CONFIG_OVERHEAD_VERSION,
+        .event_handler = on_http,
+        .user_data = &rep,
     };
     esp_http_client_handle_t h = esp_http_client_init(&c);
     size_t got = 0;
     if (esp_http_client_open(h, 0) == ESP_OK) {
         esp_http_client_fetch_headers(h);
         int status = esp_http_client_get_status_code(h);
-        char *v = NULL;
-        if (esp_http_client_get_header(h, "X-Refresh", &v) == ESP_OK && v) *refresh = atoi(v);
-        v = NULL;
-        if (esp_http_client_get_header(h, "X-Night", &v) == ESP_OK && v) *night = v[0] == '1';
-        v = NULL;
-        if (esp_http_client_get_header(h, "X-Brightness", &v) == ESP_OK && v) *bright = atoi(v); // de server bepaalt de helderheid
-        v = NULL;
-        if (status == 200) parse_hotspots(esp_http_client_get_header(h, "X-Hotspots", &v) == ESP_OK ? v : NULL);
         if (status == 200) {
             int n;
             while (got < cap && (n = esp_http_client_read(h, (char *)buf + got, cap - got)) > 0) got += n;
             if (got >= cap) { ESP_LOGW(TAG, "beeld te groot"); got = 0; }
+            *refresh = rep.refresh;
+            *night = rep.night;
+            *bright = rep.bright;
+            parse_hotspots(rep.has_hs ? rep.hs : NULL);
+            ESP_LOGI(TAG, "beeld %u bytes, wacht %d s, nacht %d, helderheid %d, %d zones", (unsigned)got, rep.refresh, rep.night, rep.bright, n_hs);
         } else {
             ESP_LOGW(TAG, "server antwoordt %d", status);
         }
