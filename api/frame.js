@@ -51,7 +51,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const nf = new Intl.NumberFormat("nl-BE");
 
 // Warm papiergrijs voor het scherm in de lijst, en een menging van twee hexkleuren
-const PAPER = "#dcd5c8";
+const PAPER = "#cdc5b6";
 function mix(a, b, t) {
   const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const x = p(a), y = p(b);
@@ -60,7 +60,9 @@ function mix(a, b, t) {
 // Het IPS-scherm toont middentonen veel lichter dan een computerscherm: met deze curve worden grijze
 // letters donkerder, terwijl wit en zwart blijven wat ze zijn
 const GAMMA = 1.45;
-const LUT = Uint8Array.from({ length: 256 }, (_, i) => Math.round(255 * Math.pow(i / 255, GAMMA)));
+// en het felste wit wordt gebroken wit (232), zodat zon, wolken en witte toestellen niet fel oplichten
+const CEIL = 232;
+const LUT = Uint8Array.from({ length: 256 }, (_, i) => Math.round(CEIL * Math.pow(i / 255, GAMMA)));
 
 const THEMES = {
   // Donkerder dan op de website: het scherm toont grijstinten veel lichter dan een computerscherm
@@ -315,7 +317,7 @@ async function render(q) {
   const cond = condition(wx?.code);
   let sky = night ? ["#0a1430", "#141d36"] : q.nacht === "uit" ? ["#ffffff", "#ffffff"] : skyColors(ph, cond);
   // Op het scherm zelf: overdag een zachtere, warmere ondergrond (minder fel wit, oogt minder als een scherm)
-  if (q._fw && !night) sky = sky.map((c) => mix(c, PAPER, 0.7));
+  if (q._fw && !night) sky = sky.map((c) => mix(c, PAPER, 0.85));
   const tz = wx?.timezone || "Europe/Brussels";
 
   const list = (data.aircraft || []).map((a) => ({ ...a, sp: spec(a) }));
