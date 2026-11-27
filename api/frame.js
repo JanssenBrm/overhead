@@ -418,7 +418,7 @@ export default async function handler(req, res) {
     res.setHeader("X-Refresh", out.error ? "30" : out.night ? "900" : "60");
     res.setHeader("X-Aircraft", String(out.count));
     // Helderheid van de verlichting (0-100); de firmware volgt die vanaf 1.0.3
-    res.setHeader("X-Brightness", out.night ? "6" : "40");
+    res.setHeader("X-Brightness", out.night ? "3" : "20");
     res.setHeader("Access-Control-Expose-Headers", "X-Night, X-Refresh, X-Aircraft, X-Brightness");
     res.setHeader("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");
     res.setHeader("Vary", "User-Agent"); // het versienummer hangt af van wie het beeld vraagt
