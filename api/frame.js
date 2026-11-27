@@ -481,39 +481,90 @@ function bigImage(c, a, box) {
   return `<g filter="url(#sh)"><svg x="${n(box.x + (box.w - il.w) / 2)}" y="${n(box.y + (box.h - il.h) / 2)}" width="${n(il.w)}" height="${n(il.h)}" viewBox="${il.viewBox}" overflow="visible">${il.inner}</svg></g>`;
 }
 
-// Kaartje: vertrek, bestemming en de plek van het toestel, in een rechthoek
+// Landsgrenzen (Natural Earth 1:50m, publiek domein), zie tools/make_world.py
+const WORLD = (() => {
+  try {
+    const w = JSON.parse(readFileSync(fileURLToPath(new URL("../lib/world.json", import.meta.url)), "utf8"));
+    return w.rings.map((f) => {
+      const pts = [];
+      let x = f[0], y = f[1];
+      pts.push([x / w.q, y / w.q]);
+      for (let i = 2; i < f.length; i += 2) { x += f[i]; y += f[i + 1]; pts.push([x / w.q, y / w.q]); }
+      let x0 = 180, x1 = -180, y0 = 90, y1 = -90;
+      for (const [lo, la] of pts) { if (lo < x0) x0 = lo; if (lo > x1) x1 = lo; if (la < y0) y0 = la; if (la > y1) y1 = la; }
+      return { pts, box: [x0, y0, x1, y1] };
+    });
+  } catch (e) {
+    console.error("wereldkaart", String(e));
+    return [];
+  }
+})();
+
+// Punten op de grootcirkel tussen twee plaatsen (zoals een vliegtuig echt vliegt)
+function greatCircle(a, b, steps = 48) {
+  const r = Math.PI / 180, toV = (p) => [Math.cos(p.lat * r) * Math.cos(p.lon * r), Math.cos(p.lat * r) * Math.sin(p.lon * r), Math.sin(p.lat * r)];
+  const A = toV(a), B = toV(b);
+  const d = Math.acos(Math.min(1, Math.max(-1, A[0] * B[0] + A[1] * B[1] + A[2] * B[2])));
+  if (d < 1e-6) return [a, b];
+  const out = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps, sa = Math.sin((1 - t) * d) / Math.sin(d), sb = Math.sin(t * d) / Math.sin(d);
+    const v = [sa * A[0] + sb * B[0], sa * A[1] + sb * B[1], sa * A[2] + sb * B[2]];
+    out.push({ lat: Math.atan2(v[2], Math.hypot(v[0], v[1])) / r, lon: Math.atan2(v[1], v[0]) / r });
+  }
+  return out;
+}
+
+// Kaartje: land, grenzen, de route over de grootcirkel, de plek van het toestel en het huis
 function routeMap(c, a, box) {
   const { u, theme } = c;
   const from = a.route?.from, to = a.route?.to;
-  const pts = [{ lat: c.lat, lon: c.lon }, { lat: a.lat, lon: a.lon }];
-  if (from?.lat != null) pts.push(from);
-  if (to?.lat != null) pts.push(to);
-  const midLat = pts.reduce((t, p) => t + p.lat, 0) / pts.length;
-  const kx = Math.cos((midLat * Math.PI) / 180);
-  const xs = pts.map((p) => p.lon * kx), ys = pts.map((p) => -p.lat);
-  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const span = Math.max(x1 - x0, y1 - y0, 0.6);
-  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-  const inner = { x: box.x + 18 * u, y: box.y + 16 * u, w: box.w - 36 * u, h: box.h - 32 * u };
-  const s = Math.min(inner.w, inner.h) / span;
-  const P = (p) => [inner.x + inner.w / 2 + (p.lon * kx - cx) * s, inner.y + inner.h / 2 + (-p.lat - cy) * s];
-  const out = [`<rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="${n(12 * u)}" fill="${theme.ink}" fill-opacity="0.05" stroke="${theme.ink}" stroke-opacity="0.12"/>`];
-  const lbl = (p, text, anchor, dy) => `<text x="${n(p[0])}" y="${n(p[1] + dy)}" text-anchor="${anchor}" ${fontAttrs("mono500")} font-size="${n(12 * u)}" fill="${theme.ink}">${esc(text)}</text>`;
-  if (from?.lat != null && to?.lat != null) {
-    const f = P(from), t = P(to), p = P(a);
-    out.push(`<path d="M${n(f[0])} ${n(f[1])} L${n(p[0])} ${n(p[1])}" stroke="${theme.ink}" stroke-width="${n(2 * u)}" stroke-linecap="round"/>`);
-    out.push(`<path d="M${n(p[0])} ${n(p[1])} L${n(t[0])} ${n(t[1])}" stroke="${theme.ink}" stroke-opacity="0.45" stroke-width="${n(2 * u)}" stroke-dasharray="${n(5 * u)} ${n(5 * u)}" stroke-linecap="round"/>`);
-    for (const [q, ap] of [[f, from], [t, to]]) {
-      out.push(`<circle cx="${n(q[0])}" cy="${n(q[1])}" r="${n(4.5 * u)}" fill="${theme.ink}"/>`);
-      out.push(lbl(q, ap.iata || "", q[0] < box.x + box.w / 2 ? "start" : "end", q[1] < box.y + box.h / 2 ? 18 * u : -9 * u));
+  const hasRoute = from?.lat != null && to?.lat != null;
+  const flown = hasRoute ? greatCircle(from, a) : [], ahead = hasRoute ? greatCircle(a, to) : [];
+  const pts = [{ lat: c.lat, lon: c.lon }, { lat: a.lat, lon: a.lon }, ...flown, ...ahead];
+  let lo0 = Math.min(...pts.map((p) => p.lon)), lo1 = Math.max(...pts.map((p) => p.lon));
+  let la0 = Math.min(...pts.map((p) => p.lat)), la1 = Math.max(...pts.map((p) => p.lat));
+  const midLat = (la0 + la1) / 2, kx = Math.cos((midLat * Math.PI) / 180);
+  // Minstens zo'n 4° breed, zodat ook een korte vlucht genoeg landkaart rond zich heeft; 12% rand
+  const inner = { x: box.x + 2, y: box.y + 2, w: box.w - 4, h: box.h - 4 };
+  let spanX = Math.max((lo1 - lo0) * kx, 4) * 1.24, spanY = Math.max(la1 - la0, 4 * (inner.h / inner.w)) * 1.24;
+  if (spanX / spanY < inner.w / inner.h) spanX = spanY * (inner.w / inner.h); else spanY = spanX * (inner.h / inner.w);
+  const cxv = ((lo0 + lo1) / 2) * kx, cyv = (la0 + la1) / 2;
+  const s = inner.w / spanX;
+  const P = (p) => [inner.x + inner.w / 2 + (p.lon * kx - cxv) * s, inner.y + inner.h / 2 - (p.lat - cyv) * s];
+  const vx0 = cxv / kx - spanX / kx / 2, vx1 = cxv / kx + spanX / kx / 2, vy0 = cyv - spanY / 2, vy1 = cyv + spanY / 2;
+
+  const id = `m${Math.round(box.x)}${Math.round(box.y)}`;
+  const land = c.night ? "#2a3550" : mix(PAPER, "#ffffff", 0.45), sea = c.night ? "#121a2c" : mix(PAPER, "#8fa6b8", 0.38);
+  const out = [`<clipPath id="${id}"><rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="${n(12 * u)}"/></clipPath>`,
+    `<g clip-path="url(#${id})"><rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" fill="${sea}"/>`];
+  // Land en grenzen: alleen de ringen die in beeld komen
+  const paths = [];
+  for (const r of WORLD) {
+    const [x0, y0, x1, y1] = r.box;
+    if (x1 < vx0 || x0 > vx1 || y1 < vy0 || y0 > vy1) continue;
+    paths.push("M" + r.pts.map((p) => { const q = P({ lon: p[0], lat: p[1] }); return `${n(q[0])} ${n(q[1])}`; }).join("L") + "Z");
+  }
+  if (paths.length) out.push(`<path d="${paths.join("")}" fill="${land}" stroke="${theme.ink}" stroke-opacity="0.28" stroke-width="${n(0.7 * u)}" stroke-linejoin="round"/>`);
+  const line = (list) => list.map((p, i) => { const q = P(p); return `${i ? "L" : "M"}${n(q[0])} ${n(q[1])}`; }).join("");
+  if (hasRoute) {
+    out.push(`<path d="${line(flown)}" fill="none" stroke="${theme.ink}" stroke-width="${n(2.2 * u)}" stroke-linecap="round" stroke-linejoin="round"/>`);
+    out.push(`<path d="${line(ahead)}" fill="none" stroke="${theme.ink}" stroke-opacity="0.55" stroke-width="${n(2 * u)}" stroke-dasharray="${n(5 * u)} ${n(5 * u)}" stroke-linecap="round"/>`);
+    for (const ap of [from, to]) {
+      const q = P(ap);
+      out.push(`<circle cx="${n(q[0])}" cy="${n(q[1])}" r="${n(4.5 * u)}" fill="${theme.ink}" stroke="${land}" stroke-width="${n(1.5 * u)}"/>`);
+      const right = q[0] > box.x + box.w * 0.7, above = q[1] > box.y + box.h * 0.75;
+      const tx = q[0] + (right ? -8 * u : 8 * u), ty = q[1] + (above ? -8 * u : 16 * u);
+      out.push(`<text x="${n(tx)}" y="${n(ty)}" text-anchor="${right ? "end" : "start"}" ${fontAttrs("mono500")} font-size="${n(12.5 * u)}" fill="${theme.ink}" stroke="${land}" stroke-width="${n(3 * u)}" paint-order="stroke">${esc(ap.iata || "")}</text>`);
     }
   }
   // Thuis
   const h = P({ lat: c.lat, lon: c.lon });
-  out.push(`<circle cx="${n(h[0])}" cy="${n(h[1])}" r="${n(5 * u)}" fill="none" stroke="${theme.climb}" stroke-width="${n(2.2 * u)}"/><circle cx="${n(h[0])}" cy="${n(h[1])}" r="${n(1.8 * u)}" fill="${theme.climb}"/>`);
+  out.push(`<circle cx="${n(h[0])}" cy="${n(h[1])}" r="${n(5 * u)}" fill="${land}" stroke="${theme.climb}" stroke-width="${n(2.2 * u)}"/><circle cx="${n(h[0])}" cy="${n(h[1])}" r="${n(1.8 * u)}" fill="${theme.climb}"/>`);
   // Toestel als pijl in de vliegrichting
   const p = P(a);
-  out.push(`<g transform="translate(${n(p[0])} ${n(p[1])}) rotate(${Math.round(a.track ?? 0)}) scale(${n(1.15 * u)})"><path d="M0 -9 6 7 0 3.5 -6 7Z" fill="${motionColor(c, a)}" stroke="#fff" stroke-width="1.2"/></g>`);
+  out.push(`<g transform="translate(${n(p[0])} ${n(p[1])}) rotate(${Math.round(a.track ?? 0)}) scale(${n(1.2 * u)})"><path d="M0 -9 6 7 0 3.5 -6 7Z" fill="${motionColor(c, a)}" stroke="#fff" stroke-width="1.3"/></g>`);
+  out.push(`</g><rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="${n(12 * u)}" fill="none" stroke="${theme.ink}" stroke-opacity="0.18"/>`);
   return out.join("");
 }
 
@@ -551,7 +602,7 @@ async function pageDetail(c, hex) {
   while (textW(rt, "sans500", rfs) > right - colX && rfs > 12 * u) rfs -= u;
   parts.push(`<text x="${n(colX)}" y="${n(y + 38 * u)}" ${fontAttrs("sans500")} font-size="${n(rfs)}" fill="${theme.ink}">${esc(rt)}</text>`);
   y += 52 * u;
-  const mapH = 170 * u;
+  const mapH = 215 * u;
   parts.push(routeMap(c, a, { x: colX, y, w: right - colX, h: mapH }));
   y += mapH + 22 * u;
 

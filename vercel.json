@@ -9,7 +9,7 @@
     "api/frame.js": {
       "maxDuration": 30,
       "memory": 1024,
-      "includeFiles": "fonts/**"
+      "includeFiles": "{fonts/**,lib/world.json}"
     }
   },
   "cleanUrls": true
