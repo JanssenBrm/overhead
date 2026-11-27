@@ -386,13 +386,17 @@ async function render(q) {
       y += r.imgH + r.capH + best.gy;
     }
   }
+  // Versie van de firmware (uit de User-Agent van het scherm), klein rechtsonder: zo zie je of een update gelukt is
+  if (q._fw) parts.push(`<text x="${n(W - 8 * u)}" y="${n(H - 6 * u)}" text-anchor="end" ${fontAttrs("mono400")} font-size="${n(10 * u)}" fill="${theme.ink}" fill-opacity="0.55">v${esc(q._fw)}</text>`);
   parts.push(`</svg>`);
   return { svg: parts.join(""), W, H, night, count: data.error ? 0 : list.length, error: !!data.error };
 }
 
 export default async function handler(req, res) {
   try {
-    const q = req.query || {};
+    const ua = String(req.headers?.["user-agent"] || "");
+    const fw = /overhead-scherm\/([\w.\-]{1,20})/.exec(ua)?.[1];
+    const q = { ...(req.query || {}), _fw: fw };
     const out = await render(q);
     const fmt = String(q.format || "png").toLowerCase();
     res.setHeader("X-Night", out.night ? "1" : "0");
@@ -401,6 +405,7 @@ export default async function handler(req, res) {
     res.setHeader("X-Aircraft", String(out.count));
     res.setHeader("Access-Control-Expose-Headers", "X-Night, X-Refresh, X-Aircraft");
     res.setHeader("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");
+    res.setHeader("Vary", "User-Agent"); // het versienummer hangt af van wie het beeld vraagt
     if (fmt === "svg") {
       res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
       res.status(200).send(out.svg);
