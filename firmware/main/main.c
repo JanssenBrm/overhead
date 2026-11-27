@@ -17,6 +17,7 @@
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -164,6 +165,18 @@ void app_main(void)
 
     settings_load(&cfg);
     ESP_LOGI(TAG, "beeld: %s", cfg.url);
+
+    // De wifi-chip (ESP32-C6) zelf resetten via zijn EN-pin (GPIO32 volgens het schema). Na een herstart van
+    // de P4 (update, herstart na instellen) blijft de C6 anders in de vorige sessie hangen en komt de wifi niet op.
+    // Kort laag trekken en daarna loslaten: de weerstand op het bord trekt EN weer hoog.
+    gpio_config_t en = { .pin_bit_mask = 1ULL << 32, .mode = GPIO_MODE_OUTPUT };
+    gpio_config(&en);
+    gpio_set_level(32, 0);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    gpio_set_direction(32, GPIO_MODE_INPUT);
+    vTaskDelay(pdMS_TO_TICKS(300));
+    ESP_LOGI(TAG, "wifi-chip gereset");
+
     ESP_ERROR_CHECK(net_init());
     improv_start();
 
