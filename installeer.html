@@ -144,7 +144,8 @@ input.url{font:12.5px var(--mono)}
 
 <script type="module" src="https://unpkg.com/esp-web-tools@10.5.2/dist/web/install-button.js?module"></script>
 <script type="module">
-import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.7.1/bundle.js";
+// esptool-js pas laden bij "Bord herkennen": lukt dat laden niet, dan werkt de rest van de pagina toch
+const esptool = () => import("https://unpkg.com/esptool-js@0.7.1/bundle.js");
 
 const $ = (id) => document.getElementById(id);
 const hasSerial = "serial" in navigator;
@@ -170,6 +171,7 @@ $("detect").addEventListener("click", async () => {
   const quiet = { clean() {}, writeLine() {}, write() {} };
   try {
     const port = await navigator.serial.requestPort();
+    const { ESPLoader, Transport } = await esptool();
     $("chip").textContent = "Verbinden…"; $("chip").className = "status";
     transport = new Transport(port, false);
     const loader = new ESPLoader({ transport, baudrate: 115200, romBaudrate: 115200, terminal: quiet });
