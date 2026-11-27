@@ -13,6 +13,7 @@
 #include "esp_lcd_ek79007.h"
 #include "driver/ledc.h"
 #include "driver/jpeg_decode.h"
+#include "esp_cache.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
@@ -25,6 +26,7 @@ static const char *TAG = "display";
 static esp_lcd_panel_handle_t panel;
 static jpeg_decoder_handle_t jpgd;
 static uint8_t *in_buf, *out_buf;
+static uint16_t *fb;            // framebuffer van het paneel: we schrijven er zelf in, zonder DMA2D
 static size_t in_cap, out_cap;
 static SemaphoreHandle_t lock;
 
@@ -98,7 +100,6 @@ esp_err_t display_init(void)
             .vsync_pulse_width = 10,
             .vsync_front_porch = 12,
         },
-        .flags.use_dma2d = true,
     };
     ek79007_vendor_config_t vendor = {
         .mipi_config = { .dsi_bus = bus, .dpi_config = &dpi_cfg, .lane_num = 2 },
@@ -112,6 +113,10 @@ esp_err_t display_init(void)
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_ek79007(io, &panel_cfg, &panel), TAG, "panel");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_reset(panel), TAG, "reset");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(panel), TAG, "init");
+    void *fbp = NULL;
+    ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_get_frame_buffer(panel, 1, &fbp), TAG, "framebuffer");
+    fb = fbp;
+    ESP_LOGI(TAG, "framebuffer op %p", fb);
 
     // jpg-decoder en zijn buffers (moeten met jpeg_alloc_decoder_mem gemaakt worden)
     const jpeg_decode_engine_cfg_t eng = { .timeout_ms = 200 };
@@ -154,8 +159,16 @@ esp_err_t display_show_buffer(size_t len)
     xSemaphoreTake(lock, portMAX_DELAY);
     err = jpeg_decoder_process(jpgd, &cfg, in_buf, len, out_buf, out_cap, &out_size);
     if (err == ESP_OK) {
+        // Rechtstreeks in de framebuffer kopiëren en de cache wegschrijven, zodat het paneel het ziet
         int rows = info.height < APP_H ? info.height : APP_H;
-        err = esp_lcd_panel_draw_bitmap(panel, 0, 0, APP_W, rows, out_buf);
+        size_t bytes = (size_t)APP_W * rows * 2;
+        // De decoder schreef via DMA: eerst de cache voor out_buf ongeldig maken, anders leest de CPU oude data
+        esp_cache_msync(out_buf, out_cap, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        memcpy(fb, out_buf, bytes);
+        err = esp_cache_msync(fb, (size_t)APP_W * APP_H * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+        const uint16_t *px = (const uint16_t *)out_buf;
+        ESP_LOGI(TAG, "beeld getoond (%ux%u, pixels %04x %04x %04x)", (unsigned)info.width, (unsigned)info.height,
+                 px[0], px[APP_W * 300 + 512], px[APP_W * (rows - 1) + APP_W - 1]);
     }
     xSemaphoreGive(lock);
     if (err != ESP_OK) ESP_LOGW(TAG, "tonen mislukt: %s", esp_err_to_name(err));
