@@ -45,6 +45,18 @@ code{font:13px var(--mono);background:#fff;border:1px solid var(--line);border-r
 details{color:var(--muted);line-height:1.5}
 summary{cursor:pointer;color:var(--ink);font-weight:500}
 esp-web-install-button button[slot]{font:500 15px var(--sans);padding:10px 18px;border-radius:10px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin:0 0 12px}
+.f{display:grid;gap:6px;font-size:13px;font-weight:500;color:var(--muted);min-width:0;position:relative}
+.f.wide{grid-column:1/-1}
+.f input,.f select{font:15px var(--sans);padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);min-width:0;width:100%}
+.f input[type=range]{padding:0;border:0;background:none}
+input.url{font:12.5px var(--mono)}
+.results{display:grid;position:absolute;top:100%;left:0;right:0;z-index:5;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.results:empty{display:none}
+.results button{all:unset;cursor:pointer;padding:9px 12px;font:14px var(--sans);color:var(--ink)}
+.results button small{color:var(--muted);margin-left:6px}
+.results button:hover,.results button:focus{background:var(--card)}
+@media (max-width:560px){.form{grid-template-columns:minmax(0,1fr)}}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
@@ -107,9 +119,22 @@ esp-web-install-button button[slot]{font:500 15px var(--sans);padding:10px 18px;
 
   <section class="step" id="s4">
     <div class="num">4</div>
-    <h2>Plaats doorgeven</h2>
-    <p>Het scherm toont standaard de lucht boven Dessel. Om de plaats, straal en titel van de <a href="/">live pagina</a> op deze computer te gebruiken, stuur je dit adres naar het scherm:</p>
-    <code class="url" id="url"></code>
+    <h2>Plaats en weergave</h2>
+    <p>Kies wat het scherm toont. Het adres hieronder wordt meteen aangepast en gaat met de knop naar het scherm.</p>
+    <div class="form">
+      <label class="f wide">Plaats
+        <input id="q-place" autocomplete="off" placeholder="Zoek een gemeente, bv. Mol">
+        <span class="results" id="q-results"></span>
+      </label>
+      <label class="f">Titel<input id="q-title" placeholder="Nu in de lucht"></label>
+      <label class="f">Straal: <span id="q-radv">40 km</span><input id="q-rad" type="range" min="5" max="100" step="5" value="40"></label>
+      <label class="f">Afbeeldingen<select id="q-view"><option value="schilderij">Schilderijen (AI)</option><option value="illustratie">Getekende illustraties</option></select></label>
+      <label class="f">Achtergrond<select id="q-night"><option value="auto">Hemel van nu</option><option value="uit">Altijd licht</option><option value="aan">Altijd donker</option></select></label>
+      <label class="f">Decor<select id="q-decor"><option value="straat">Straat en hemel</option><option value="effen">Effen</option></select></label>
+    </div>
+    <label class="f" style="margin:4px 0 12px">Adres
+      <input class="url" id="url" spellcheck="false">
+    </label>
     <div class="row">
       <button class="btn" id="sendurl" type="button">Naar het scherm sturen</button>
       <span class="status" id="urlstatus"></span>
@@ -172,19 +197,62 @@ let cfg = {};
 try { cfg = JSON.parse(localStorage.getItem("overhead.cfg") || "{}"); } catch (e) {}
 const fr = {};
 try { Object.assign(fr, JSON.parse(localStorage.getItem("overhead.frame") || "{}")); } catch (e) {}
-const p = new URLSearchParams();
-p.set("lat", cfg.lat ?? 51.2387); p.set("lon", cfg.lon ?? 5.1159); p.set("straal", cfg.radius ?? 40);
-p.set("plaats", cfg.place ?? (cfg.lat ? "" : "Dessel"));
-if (cfg.title) p.set("titel", cfg.title);
-if (fr.v && fr.v !== "schilderij") p.set("weergave", fr.v);
-if (fr.n && fr.n !== "auto") p.set("nacht", fr.n);
-if (fr.d && fr.d !== "straat") p.set("decor", fr.d);
-// Het scherm werkt liggend (1024 x 600): geen w/h meegeven
-const frameUrl = `${location.origin}/api/frame?${p}`;
-$("url").textContent = frameUrl;
+// Vertrekpunt: de instellingen van de live pagina op deze computer, anders Dessel
+const st = {
+  lat: cfg.lat ?? 51.2387, lon: cfg.lon ?? 5.1159, place: cfg.place ?? (cfg.lat ? "" : "Dessel"),
+  title: cfg.title || "", radius: cfg.radius ?? 40,
+  view: cfg.view === "illustratie" || fr.v === "illustratie" ? "illustratie" : "schilderij",
+  night: cfg.night === "on" ? "aan" : cfg.night === "off" ? "uit" : "auto",
+  decor: fr.d === "effen" ? "effen" : "straat",
+};
+$("q-place").value = st.place; $("q-title").value = st.title; $("q-rad").value = st.radius; $("q-radv").textContent = st.radius + " km";
+$("q-view").value = st.view; $("q-night").value = st.night; $("q-decor").value = st.decor;
+
+function build() {
+  const p = new URLSearchParams();
+  p.set("lat", (+st.lat).toFixed(4)); p.set("lon", (+st.lon).toFixed(4)); p.set("straal", st.radius);
+  if (st.place) p.set("plaats", st.place);
+  if (st.title) p.set("titel", st.title);
+  if (st.view !== "schilderij") p.set("weergave", st.view);
+  if (st.night !== "auto") p.set("nacht", st.night);
+  if (st.decor !== "straat") p.set("decor", st.decor);
+  // Het scherm werkt liggend (1024 x 600): geen w/h meegeven
+  $("url").value = `${location.origin}/api/frame?${p}`;
+}
+build();
+$("q-title").addEventListener("input", (e) => { st.title = e.target.value.trim(); build(); });
+$("q-rad").addEventListener("input", (e) => { st.radius = +e.target.value; $("q-radv").textContent = st.radius + " km"; build(); });
+$("q-view").addEventListener("change", (e) => { st.view = e.target.value; build(); });
+$("q-night").addEventListener("change", (e) => { st.night = e.target.value; build(); });
+$("q-decor").addEventListener("change", (e) => { st.decor = e.target.value; build(); });
+let searchT;
+const escH = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+$("q-place").addEventListener("input", (e) => {
+  clearTimeout(searchT);
+  const q = e.target.value.trim();
+  if (q.length < 2) { $("q-results").innerHTML = ""; return; }
+  searchT = setTimeout(async () => {
+    try {
+      const j = await (await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)).json();
+      const list = j.results || [];
+      $("q-results").innerHTML = list.map((r, i) => `<button type="button" data-i="${i}">${escH(r.name)}<small>${escH(r.region || "")}</small></button>`).join("");
+      $("q-results").querySelectorAll("button").forEach((b) => b.onclick = () => {
+        const r = list[+b.dataset.i];
+        Object.assign(st, { lat: r.lat, lon: r.lon, place: r.name });
+        $("q-place").value = r.name; $("q-results").innerHTML = ""; build();
+      });
+    } catch (err) { $("q-results").innerHTML = ""; }
+  }, 300);
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".f.wide")) $("q-results").innerHTML = ""; });
 
 $("sendurl").addEventListener("click", async () => {
   const st = $("urlstatus");
+  const frameUrl = $("url").value.trim();
+  if (!/^https?:\/\//.test(frameUrl) || frameUrl.length > 250) {
+    st.textContent = "Het adres moet met https:// beginnen en mag hoogstens 250 tekens lang zijn."; st.className = "status warn";
+    return;
+  }
   let port, reader;
   try {
     port = (await navigator.serial.getPorts())[0] || (await navigator.serial.requestPort());
