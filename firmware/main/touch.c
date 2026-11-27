@@ -58,12 +58,19 @@ esp_err_t touch_init(void)
     return ESP_ERR_NOT_FOUND;
 }
 
-bool touch_pressed(void)
+// Geeft 1 bij een nieuwe meting met een vinger (x, y in pixels), 0 bij een nieuwe meting zonder vinger,
+// en -1 als er niets nieuws is
+int touch_read(int *x, int *y)
 {
-    if (!dev) return false;
+    if (!dev) return -1;
     uint8_t st = 0;
-    if (rd(0x814E, &st, 1) != ESP_OK) return false;
-    if (!(st & 0x80)) return false;      // nog geen nieuwe meting
+    if (rd(0x814E, &st, 1) != ESP_OK) return -1;
+    if (!(st & 0x80)) return -1;         // nog geen nieuwe meting
+    int n = st & 0x0F;
+    if (n > 0) {
+        uint8_t p[4];
+        if (rd(0x8150, p, 4) == ESP_OK) { *x = p[0] | (p[1] << 8); *y = p[2] | (p[3] << 8); }
+    }
     wr8(0x814E, 0);                      // meting bevestigen
-    return (st & 0x0F) > 0;
+    return n > 0;
 }

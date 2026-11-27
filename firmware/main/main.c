@@ -6,6 +6,7 @@
 //     (blijft ondertussen proberen met de bewaarde wifi)
 //  3. beeld ophalen, tonen, X-Refresh seconden wachten; X-Night=1 -> verlichting gedimd
 //  4. af en toe nagaan of er nieuwe firmware is
+//  Kort tikken: balk voor de helderheid (links donkerder, rechts lichter).
 //  Lang (5 s) aanraken: wifi vergeten en herstarten met het portaal.
 #include <string.h>
 #include <stdlib.h>
@@ -24,6 +25,7 @@
 static const char *TAG = "overhead";
 static settings_t cfg;
 static volatile bool setup_mode;
+static void apply_brightness(void);
 
 #define BRIGHT_DAY 60
 #define BRIGHT_NIGHT 12
@@ -32,7 +34,7 @@ static void show_setup(void)
 {
     setup_mode = true;
     display_show_jpeg(setup_jpg_start, setup_jpg_end - setup_jpg_start);
-    display_brightness(BRIGHT_DAY);
+    apply_brightness();
     portal_start();
 }
 
@@ -78,25 +80,66 @@ static size_t fetch(int *refresh, bool *night, int *bright)
     return got;
 }
 
-// Lang aanraken (5 s) = wifi opnieuw instellen
+/* ---------- Helderheid: de server geeft een basis (dag/nacht), de gebruiker schuift er een niveau op ---------- */
+static const int OFFS[] = { -15, -10, -5, 0, 5, 10, 15, 25, 35, 50 };
+#define LEVELS (int)(sizeof(OFFS) / sizeof(OFFS[0]))
+#define LEVEL_DEFAULT 3
+static int level = LEVEL_DEFAULT, srv_bright = -1;
+static bool srv_night;
+
+static void apply_brightness(void)
+{
+    int base = srv_bright >= 0 ? srv_bright : srv_night ? BRIGHT_NIGHT : BRIGHT_DAY;
+    int off = OFFS[level];
+    if (srv_night) off /= 4; // 's nachts maar een beetje bijsturen
+    int b = base + off;
+    display_brightness(b < 1 ? 1 : b > 100 ? 100 : b);
+}
+
+// Aanraken:
+//  - kort tikken toont de balk voor de helderheid; tik dan links (donkerder) of rechts (lichter)
+//  - 5 s vasthouden: wifi vergeten en herstarten met het portaal
 static void touch_task(void *arg)
 {
-    int64_t since = 0;
-    int64_t last_seen = 0;
+    bool down = false;
+    int64_t since = 0, last_seen = 0, bar_until = 0;
+    int x = 0, y = 0, tx = 0;
     for (;;) {
         int64_t now = esp_timer_get_time();
-        if (touch_pressed()) {
-            if (!since) since = now;
+        int r = touch_read(&x, &y);
+        if (r == 1) {
+            if (!down) { down = true; since = now; }
             last_seen = now;
-        } else if (since && now - last_seen > 400000) {
-            since = 0; // losgelaten
+            tx = x;
         }
-        if (since && now - since > 5000000 && !setup_mode) {
+        bool released = down && (r == 0 || now - last_seen > 300000);
+        if (down && !released && now - since > 5000000 && !setup_mode) {
             ESP_LOGI(TAG, "lang aangeraakt: wifi vergeten en opnieuw instellen");
             settings_forget_wifi();
             esp_restart(); // start zonder wifi, dus met het portaal
         }
-        vTaskDelay(pdMS_TO_TICKS(60));
+        if (released) {
+            down = false;
+            if (last_seen - since < 1000000) { // een tik
+                if (now < bar_until) {
+                    int d = tx < APP_W / 3 ? -1 : tx > APP_W * 2 / 3 ? 1 : 0;
+                    int nl = level + d;
+                    if (nl >= 0 && nl < LEVELS && nl != level) {
+                        level = nl;
+                        settings_set_int("bright", level);
+                        apply_brightness();
+                        ESP_LOGI(TAG, "helderheid: niveau %d", level);
+                    }
+                }
+                display_level(level, LEVELS);
+                bar_until = now + 4000000;
+            }
+        }
+        if (bar_until && now > bar_until) {
+            bar_until = 0;
+            display_redraw();
+        }
+        vTaskDelay(pdMS_TO_TICKS(30));
     }
 }
 
@@ -130,7 +173,9 @@ static void frame_task(void *arg)
             }
             shown = true;
             fails = 0;
-            display_brightness(bright >= 0 ? bright : night ? BRIGHT_NIGHT : BRIGHT_DAY);
+            srv_bright = bright;
+            srv_night = night;
+            apply_brightness();
         } else {
             refresh = 30;
             if (++fails == 10) { // ± 5 minuten niets: toon het, maar het laatste goede beeld blijft tot dan staan
@@ -163,7 +208,9 @@ void app_main(void)
         ESP_LOGE(TAG, "scherm start niet");
     }
     display_show_jpeg(start_jpg_start, start_jpg_end - start_jpg_start);
-    display_brightness(BRIGHT_DAY);
+    level = settings_get_int("bright", LEVEL_DEFAULT);
+    if (level < 0 || level >= LEVELS) level = LEVEL_DEFAULT;
+    apply_brightness();
     if (touch_init() == ESP_OK) xTaskCreate(touch_task, "touch", 3072, NULL, 3, NULL);
 
     settings_load(&cfg);

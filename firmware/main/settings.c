@@ -42,3 +42,23 @@ esp_err_t settings_forget_wifi(void)
     nvs_close(h);
     return err;
 }
+
+int settings_get_int(const char *key, int def)
+{
+    nvs_handle_t h;
+    int32_t v = def;
+    if (nvs_open("overhead", NVS_READONLY, &h) == ESP_OK) {
+        nvs_get_i32(h, key, &v);
+        nvs_close(h);
+    }
+    return v;
+}
+
+void settings_set_int(const char *key, int v)
+{
+    nvs_handle_t h;
+    if (nvs_open("overhead", NVS_READWRITE, &h) != ESP_OK) return;
+    nvs_set_i32(h, key, v);
+    nvs_commit(h);
+    nvs_close(h);
+}

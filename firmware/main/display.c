@@ -29,6 +29,7 @@ static uint8_t *in_buf, *out_buf;
 static uint16_t *fb;            // framebuffer van het paneel: we schrijven er zelf in, zonder DMA2D
 static size_t in_cap, out_cap;
 static SemaphoreHandle_t lock;
+static size_t last_bytes;       // grootte van het laatst getoonde beeld in out_buf
 
 static esp_err_t backlight_init(void)
 {
@@ -165,6 +166,7 @@ esp_err_t display_show_buffer(size_t len)
         // De decoder schreef via DMA: eerst de cache voor out_buf ongeldig maken, anders leest de CPU oude data
         esp_cache_msync(out_buf, out_cap, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         memcpy(fb, out_buf, bytes);
+        last_bytes = bytes;
         err = esp_cache_msync(fb, (size_t)APP_W * APP_H * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         const uint16_t *px = (const uint16_t *)out_buf;
         ESP_LOGI(TAG, "beeld getoond (%ux%u, pixels %04x %04x %04x)", (unsigned)info.width, (unsigned)info.height,
@@ -182,4 +184,59 @@ esp_err_t display_show_jpeg(const uint8_t *jpg, size_t len)
     memcpy(in_buf, jpg, len);
     xSemaphoreGive(lock);
     return display_show_buffer(len);
+}
+
+/* ---------- Balk voor de helderheid: rechtstreeks in de framebuffer getekend ---------- */
+#define RGB565(r, g, b) (uint16_t)((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3))
+
+static void fill(int x, int y, int w, int h, uint16_t c)
+{
+    for (int r = y; r < y + h; r++) {
+        if (r < 0 || r >= APP_H) continue;
+        uint16_t *row = fb + r * APP_W;
+        for (int k = x; k < x + w; k++) if (k >= 0 && k < APP_W) row[k] = c;
+    }
+}
+
+// Afgeronde rechthoek: per rij de breedte van de kwartcirkels in de hoeken uitrekenen
+static void rounded(int x, int y, int w, int h, int r, uint16_t c)
+{
+    for (int dy = 0; dy < h; dy++) {
+        int ry = dy < r ? r - dy : dy >= h - r ? dy - (h - r - 1) : 0;
+        int dx = 0;
+        while (dx < r && (r - dx) * (r - dx) + ry * ry > r * r) dx++;
+        fill(x + dx, y + dy, w - 2 * dx, 1, c);
+    }
+}
+
+void display_level(int level, int levels)
+{
+    if (!fb) return;
+    const int W = 440, H = 76, X = (APP_W - W) / 2, Y = APP_H - H - 40;
+    const uint16_t bg = RGB565(28, 30, 34), on = RGB565(255, 255, 255), off = RGB565(78, 82, 90);
+    xSemaphoreTake(lock, portMAX_DELAY);
+    rounded(X, Y, W, H, H / 2, bg);
+    // links een min, rechts een plus
+    fill(X + 34, Y + H / 2 - 3, 26, 6, on);
+    fill(X + W - 60, Y + H / 2 - 3, 26, 6, on);
+    fill(X + W - 50, Y + H / 2 - 13, 6, 26, on);
+    // de niveaus als blokjes, oplopend in hoogte
+    const int gx = X + 90, gw = W - 180, gap = 6, bw = (gw - gap * (levels - 1)) / levels;
+    for (int i = 0; i < levels; i++) {
+        int bh = 12 + (30 * i) / (levels - 1);
+        fill(gx + i * (bw + gap), Y + H / 2 + 21 - bh, bw, bh, i <= level ? on : off);
+    }
+    esp_cache_msync(fb, (size_t)APP_W * APP_H * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    xSemaphoreGive(lock);
+}
+
+void display_redraw(void)
+{
+    if (!fb) return;
+    xSemaphoreTake(lock, portMAX_DELAY);
+    if (last_bytes) {
+        memcpy(fb, out_buf, last_bytes);
+        esp_cache_msync(fb, (size_t)APP_W * APP_H * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    }
+    xSemaphoreGive(lock);
 }
