@@ -99,6 +99,8 @@ input[type=range]{background:none;border:0;padding:0;accent-color:var(--ink)}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
 #f-geo{justify-self:start}
 .hint{font-size:13px;color:var(--muted);margin:0}
+.urlrow{display:flex;gap:8px;min-width:0}.urlrow input{flex:1;min-width:0;font:12.5px var(--mono)}
+.screenbox{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:14px}.screenbox .hint a{color:inherit}
 /* Bijzondere toestellen */
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:.82em;font-weight:600;letter-spacing:.02em;padding:1px 8px;border-radius:99px;color:#fff;background:var(--c);margin-bottom:1px}
 .badge svg{width:.95em;height:.95em}
@@ -203,6 +205,11 @@ body.night .btn{background:var(--ink);color:var(--bg);border-color:var(--ink)}
     </label>
     <button class="btn ghost" type="button" id="f-geo">Gebruik de locatie van dit toestel</button>
     <p class="hint" id="f-msg"></p>
+    <div class="screenbox">
+      <label class="field" for="f-frameurl">Adres voor het scherm in de lijst</label>
+      <div class="urlrow"><input id="f-frameurl" readonly><button class="btn ghost" type="button" id="f-copy">Kopieer</button></div>
+      <p class="hint">Met de instellingen hierboven. Zet het op het scherm via de <a href="/installeer">installatiepagina</a> (stap 4) of plak het in de instelpagina van het scherm zelf. <a href="/frame">Bekijk hoe het eruitziet</a>.</p>
+    </div>
     <div class="btns">
       <button class="btn ghost" value="cancel" type="submit">Annuleer</button>
       <button class="btn" id="f-save" type="button">Opslaan</button>
@@ -1214,8 +1221,30 @@ function openSettings() {
   $("f-title").value = cfg.title; $("f-lat").value = cfg.lat; $("f-lon").value = cfg.lon;
   $("f-rad").value = cfg.radius; $("f-view").value = cfg.view; $("f-night").value = cfg.night || "auto"; $("f-radv").textContent = cfg.radius + " km";
   $("f-search").value = cfg.place || ""; $("results").innerHTML = ""; $("f-msg").textContent = "";
+  pendingPlace = cfg.place;
+  frameUrl();
   dlg.showModal();
 }
+// Adres van het beeld voor het scherm (/api/frame), uit wat nu in het formulier staat
+function frameUrl() {
+  const num = (id, d) => { const v = parseFloat(String($(id).value).replace(",", ".")); return Number.isFinite(v) ? v : d; };
+  const p = new URLSearchParams();
+  p.set("lat", num("f-lat", cfg.lat)); p.set("lon", num("f-lon", cfg.lon)); p.set("straal", $("f-rad").value || cfg.radius);
+  const place = pendingPlace || ""; if (place) p.set("plaats", place);
+  const t = $("f-title").value.trim(); if (t) p.set("titel", t);
+  if ($("f-view").value === "illustratie") p.set("weergave", "illustratie"); // foto's bestaan niet op het scherm: dan schilderijen
+  const n = $("f-night").value; if (n === "on") p.set("nacht", "aan"); else if (n === "off") p.set("nacht", "uit");
+  try { if (JSON.parse(localStorage.getItem("overhead.frame") || "{}").d === "effen") p.set("decor", "effen"); } catch (e) {}
+  $("f-frameurl").value = `${location.origin}/api/frame?${p}`;
+}
+$("form").addEventListener("input", frameUrl);
+$("form").addEventListener("change", frameUrl);
+$("f-copy").addEventListener("click", async () => {
+  const b = $("f-copy");
+  try { await navigator.clipboard.writeText($("f-frameurl").value); b.textContent = "Gekopieerd"; }
+  catch (e) { $("f-frameurl").select(); b.textContent = "Geselecteerd"; }
+  setTimeout(() => (b.textContent = "Kopieer"), 1800);
+});
 $("gear").addEventListener("click", openSettings);
 $("f-rad").addEventListener("input", (e) => $("f-radv").textContent = e.target.value + " km");
 let pendingPlace = cfg.place, searchT;
@@ -1231,7 +1260,7 @@ $("f-search").addEventListener("input", (e) => {
       $("results").querySelectorAll("button").forEach((b) => b.onclick = () => {
         const p = j.results[+b.dataset.i];
         $("f-lat").value = p.lat.toFixed(4); $("f-lon").value = p.lon.toFixed(4);
-        pendingPlace = p.name; $("f-search").value = p.name; $("results").innerHTML = "";
+        pendingPlace = p.name; $("f-search").value = p.name; $("results").innerHTML = ""; frameUrl();
       });
     } catch (err) { $("results").innerHTML = `<p class="hint">Zoeken lukt nu niet.</p>`; }
   }, 300);
@@ -1240,7 +1269,7 @@ $("f-geo").addEventListener("click", () => {
   if (!navigator.geolocation) { $("f-msg").textContent = "Dit toestel kan zijn locatie niet doorgeven."; return; }
   $("f-msg").textContent = "Locatie opvragen…";
   navigator.geolocation.getCurrentPosition(
-    (p) => { $("f-lat").value = p.coords.latitude.toFixed(4); $("f-lon").value = p.coords.longitude.toFixed(4); pendingPlace = ""; $("f-search").value = ""; $("f-msg").textContent = "Locatie ingevuld."; },
+    (p) => { $("f-lat").value = p.coords.latitude.toFixed(4); $("f-lon").value = p.coords.longitude.toFixed(4); pendingPlace = ""; $("f-search").value = ""; $("f-msg").textContent = "Locatie ingevuld."; frameUrl(); },
     () => { $("f-msg").textContent = "Toegang tot de locatie is geweigerd. Zoek de plaats op naam."; },
     { timeout: 10000 }
   );
