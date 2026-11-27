@@ -6,7 +6,8 @@
 //     (blijft ondertussen proberen met de bewaarde wifi)
 //  3. beeld ophalen, tonen, X-Refresh seconden wachten; X-Night=1 -> verlichting gedimd
 //  4. af en toe nagaan of er nieuwe firmware is
-//  Kort tikken: balk voor de helderheid (links donkerder, rechts lichter).
+//  Tik op een toestel: detail; op de titel: verzamelboek; op de klok: radarkaart.
+//  Kort tikken elders: balk voor de helderheid (links donkerder, rechts lichter).
 //  Lang (5 s) aanraken: wifi vergeten en herstarten met het portaal.
 #include <string.h>
 #include <stdlib.h>
@@ -21,6 +22,8 @@
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
+#include <stdio.h>
 
 static const char *TAG = "overhead";
 static settings_t cfg;
@@ -38,12 +41,76 @@ static void show_setup(void)
     portal_start();
 }
 
+/* ---------- Pagina's en aanraakzones ---------- */
+// De server stuurt bij elk beeld "X-Hotspots: id:x,y,w,h;...". Een tik in een zone opent een pagina:
+//   een hexcode -> detail van dat toestel, @boek -> verzamelboek, @radar -> radarkaart, @terug -> overzicht
+typedef struct { char id[10]; int16_t x, y, w, h; } hotspot_t;
+#define MAX_HS 48
+static hotspot_t hs[MAX_HS];
+static int n_hs;
+static char page_q[40];              // extra parameters voor de huidige pagina ("" = overzicht)
+static int64_t page_until;           // na deze tijd terug naar het overzicht
+static SemaphoreHandle_t page_lock;
+static TaskHandle_t frame_handle;
+#define PAGE_SECONDS 60
+
+static void parse_hotspots(const char *v)
+{
+    hotspot_t tmp[MAX_HS];
+    int k = 0;
+    while (v && *v && k < MAX_HS) {
+        const char *colon = strchr(v, ':');
+        if (!colon) break;
+        size_t il = colon - v;
+        if (il >= sizeof(tmp[k].id)) il = sizeof(tmp[k].id) - 1;
+        memcpy(tmp[k].id, v, il);
+        tmp[k].id[il] = 0;
+        int x, y, w, h;
+        if (sscanf(colon + 1, "%d,%d,%d,%d", &x, &y, &w, &h) == 4) {
+            tmp[k].x = x; tmp[k].y = y; tmp[k].w = w; tmp[k].h = h;
+            k++;
+        }
+        const char *semi = strchr(colon, ';');
+        v = semi ? semi + 1 : NULL;
+    }
+    xSemaphoreTake(page_lock, portMAX_DELAY);
+    memcpy(hs, tmp, sizeof(hotspot_t) * k);
+    n_hs = k;
+    xSemaphoreGive(page_lock);
+}
+
+// Zoekt de zone onder (x, y) en stelt de pagina in. Geeft true als er een zone was.
+static bool open_hotspot(int x, int y)
+{
+    bool hit = false;
+    xSemaphoreTake(page_lock, portMAX_DELAY);
+    for (int i = 0; i < n_hs; i++) {
+        const hotspot_t *z = &hs[i];
+        if (x < z->x || y < z->y || x >= z->x + z->w || y >= z->y + z->h) continue;
+        if (!strcmp(z->id, "@terug")) page_q[0] = 0;
+        else if (z->id[0] == '@') snprintf(page_q, sizeof(page_q), "&pagina=%s", z->id + 1);
+        else snprintf(page_q, sizeof(page_q), "&pagina=detail&hex=%s", z->id);
+        page_until = esp_timer_get_time() + (int64_t)PAGE_SECONDS * 1000000;
+        n_hs = 0; // tot het nieuwe beeld er is: geen dubbele tikken
+        hit = true;
+        ESP_LOGI(TAG, "tik op %s", z->id);
+        break;
+    }
+    xSemaphoreGive(page_lock);
+    if (hit && frame_handle) xTaskNotifyGive(frame_handle); // meteen ophalen
+    return hit;
+}
+
 // Haalt het beeld op in de invoerbuffer van de decoder. Geeft de lengte terug (0 bij een fout).
 static size_t fetch(int *refresh, bool *night, int *bright)
 {
-    char url[300];
+    char url[360];
     strlcpy(url, cfg.url, sizeof(url));
     if (!strstr(url, "format=")) strlcat(url, strchr(url, '?') ? "&format=jpg" : "?format=jpg", sizeof(url));
+    xSemaphoreTake(page_lock, portMAX_DELAY);
+    if (page_q[0] && esp_timer_get_time() > page_until) page_q[0] = 0; // lang genoeg op een pagina: terug
+    strlcat(url, page_q, sizeof(url));
+    xSemaphoreGive(page_lock);
 
     size_t cap;
     uint8_t *buf = display_jpeg_buffer(&cap);
@@ -66,6 +133,8 @@ static size_t fetch(int *refresh, bool *night, int *bright)
         if (esp_http_client_get_header(h, "X-Night", &v) == ESP_OK && v) *night = v[0] == '1';
         v = NULL;
         if (esp_http_client_get_header(h, "X-Brightness", &v) == ESP_OK && v) *bright = atoi(v); // de server bepaalt de helderheid
+        v = NULL;
+        if (status == 200) parse_hotspots(esp_http_client_get_header(h, "X-Hotspots", &v) == ESP_OK ? v : NULL);
         if (status == 200) {
             int n;
             while (got < cap && (n = esp_http_client_read(h, (char *)buf + got, cap - got)) > 0) got += n;
@@ -103,7 +172,7 @@ static void touch_task(void *arg)
 {
     bool down = false;
     int64_t since = 0, last_seen = 0, bar_until = 0;
-    int x = 0, y = 0, tx = 0;
+    int x = 0, y = 0, tx = 0, ty = 0;
     for (;;) {
         int64_t now = esp_timer_get_time();
         int r = touch_read(&x, &y);
@@ -111,6 +180,7 @@ static void touch_task(void *arg)
             if (!down) { down = true; since = now; }
             last_seen = now;
             tx = x;
+            ty = y;
         }
         bool released = down && (r == 0 || now - last_seen > 300000);
         if (down && !released && now - since > 5000000 && !setup_mode) {
@@ -121,6 +191,10 @@ static void touch_task(void *arg)
         if (released) {
             down = false;
             if (last_seen - since < 1000000) { // een tik
+                if (now >= bar_until && open_hotspot(tx, ty)) {
+                    display_busy(tx, ty);
+                    continue;
+                }
                 if (now < bar_until) {
                     int d = tx < APP_W / 3 ? -1 : tx > APP_W * 2 / 3 ? 1 : 0;
                     int nl = level + d;
@@ -183,7 +257,7 @@ static void frame_task(void *arg)
                 shown = false;
             }
         }
-        if (refresh < 15) refresh = 15;
+        if (refresh < 10) refresh = 10;
         if (refresh > 3600) refresh = 3600;
 
         // Updates: kort na het opstarten en daarna om de 6 uur
@@ -192,13 +266,17 @@ static void frame_task(void *arg)
             last_ota = now;
             ota_check(cfg.url);
         }
-        vTaskDelay(pdMS_TO_TICKS(refresh * 1000));
+        // Op een pagina: niet langer wachten dan tot ze verloopt
+        int64_t left = page_q[0] ? (page_until - esp_timer_get_time()) / 1000000 + 1 : refresh;
+        if (left < refresh) refresh = left < 1 ? 1 : (int)left;
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(refresh * 1000));
     }
 }
 
 void app_main(void)
 {
     ESP_LOGI(TAG, "Overhead-scherm %s (%s)", CONFIG_OVERHEAD_VERSION, CONFIG_OVERHEAD_VARIANT);
+    page_lock = xSemaphoreCreateMutex();
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         nvs_flash_erase();
@@ -236,5 +314,5 @@ void app_main(void)
     } else {
         show_setup();
     }
-    xTaskCreate(frame_task, "frame", 8192, NULL, 5, NULL);
+    xTaskCreate(frame_task, "frame", 8192, NULL, 5, &frame_handle);
 }

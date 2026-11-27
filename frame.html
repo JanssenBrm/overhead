@@ -100,7 +100,7 @@ a.back{color:var(--muted);font-size:14px}
     <div class="field">Adres voor het scherm
       <div class="url"><code id="url"></code><button class="btn" id="copy" type="button">Kopieer</button></div>
     </div>
-    <p class="hint">Het scherm haalt dit beeld overdag elke minuut op en 's nachts om het kwartier. Plaats, straal en titel komen uit de instellingen van de <a href="/">live pagina</a> op dit toestel. Voor het ESP32-scherm gebruikt het adres <b>format=jpg</b> (± 75 KB per beeld), dat de ESP32 zelf uitpakt. De antwoordheader <b>X-Night</b> zegt het scherm wanneer het 's nachts de verlichting mag dimmen.</p>
+    <p class="hint">Het scherm haalt dit beeld overdag elke minuut op en 's nachts om het kwartier. Klik op een toestel, de titel (verzamelboek) of de klok (radar) om de pagina's te zien, net als door te tikken op het scherm. Plaats, straal en titel komen uit de instellingen van de <a href="/">live pagina</a> op dit toestel. Voor het ESP32-scherm gebruikt het adres <b>format=jpg</b> (± 75 KB per beeld), dat de ESP32 zelf uitpakt. De antwoordheader <b>X-Night</b> zegt het scherm wanneer het 's nachts de verlichting mag dimmen.</p>
   </section>
 </div>
 
@@ -125,12 +125,20 @@ function params(extra = {}) {
   return p;
 }
 
-let timer, lastUrl;
+let timer, lastUrl, spots = [], page = "", pageUntil = 0;
+// Net als op het scherm: klik op een toestel, de titel of de klok
+function parseSpots(v) {
+  spots = (v || "").split(";").filter(Boolean).map((p) => { const [id, r] = p.split(":"); const [x, y, w, h] = r.split(",").map(Number); return { id, x, y, w, h }; });
+}
 async function load() {
   clearTimeout(timer);
   $("loading").hidden = false;
   try {
-    const r = await fetch(`/api/frame?${params({ t: Date.now() })}`);
+    if (page && Date.now() > pageUntil) page = "";
+    const extra = { t: Date.now() };
+    if (page) for (const [k, v] of new URLSearchParams(page)) extra[k] = v;
+    const r = await fetch(`/api/frame?${params(extra)}`);
+    parseSpots(r.headers.get("X-Hotspots"));
     if (!r.ok) throw new Error(r.status);
     const blob = await r.blob();
     if (lastUrl) URL.revokeObjectURL(lastUrl);
@@ -165,6 +173,16 @@ document.addEventListener("click", (e) => {
   if (b.dataset.d) st.d = b.dataset.d;
   sync(); load();
 });
+$("img").addEventListener("click", (e) => {
+  const box = e.target.getBoundingClientRect(), sx = e.target.naturalWidth / box.width;
+  const x = (e.clientX - box.left) * sx, y = (e.clientY - box.top) * sx;
+  const z = spots.find((s) => x >= s.x && y >= s.y && x < s.x + s.w && y < s.y + s.h);
+  if (!z) return;
+  page = z.id === "@terug" ? "" : z.id[0] === "@" ? `pagina=${z.id.slice(1)}` : `pagina=detail&hex=${z.id}`;
+  pageUntil = Date.now() + 60000;
+  load();
+});
+$("img").style.cursor = "pointer";
 $("copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("url").textContent); $("copy").textContent = "Gekopieerd"; }
   catch (e) { const r = document.createRange(); r.selectNodeContents($("url")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("copy").textContent = "Geselecteerd"; }

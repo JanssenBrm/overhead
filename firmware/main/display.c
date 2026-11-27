@@ -240,3 +240,19 @@ void display_redraw(void)
     }
     xSemaphoreGive(lock);
 }
+
+// Een ring op de plek van de tik: het nieuwe beeld komt eraan
+void display_busy(int x, int y)
+{
+    if (!fb) return;
+    const int R = 22, r = 15;
+    const uint16_t c = RGB565(28, 30, 34);
+    xSemaphoreTake(lock, portMAX_DELAY);
+    for (int dy = -R; dy <= R; dy++)
+        for (int dx = -R; dx <= R; dx++) {
+            int d = dx * dx + dy * dy;
+            if (d <= R * R && d >= r * r) fill(x + dx, y + dy, 1, 1, c);
+        }
+    esp_cache_msync(fb, (size_t)APP_W * APP_H * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    xSemaphoreGive(lock);
+}

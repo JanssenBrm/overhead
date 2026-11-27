@@ -45,7 +45,11 @@ Silhouetten worden getekend uit een tabel met ICAO-typecodes (spanwijdte, lengte
 - `decor`: `straat` (standaard) of `effen`. Met `straat` krijgt het beeld de hemel van nu (zon op haar echte plek, wolken volgens de bewolking, regen of sneeuw, 's nachts sterren en de maan in de juiste fase) en onderaan een willekeurige Kempense straat met dennen, huizen en een kerktoren, vast per locatie, met ramen die 's avonds aangaan (`lib/scenery.js`).
 - `format`: `png`, `jpg` (aanbevolen voor het scherm, ± 75 KB), `rgb565` (ruwe pixels, 1,2 MB per beeld: te groot voor het gratis dataverkeer), `rgb565be` of `svg`
 
-Headers: `X-Night` (1 's nachts, om de verlichting te dimmen), `X-Refresh` (aanbevolen wachttijd in seconden: 60 overdag, 900 's nachts), `X-Aircraft`.
+- `pagina`: `detail` (met `hex`), `radar` of `boek`; zonder: het overzicht
+
+Headers: `X-Night` (1 's nachts), `X-Refresh` (aanbevolen wachttijd in seconden), `X-Aircraft`, `X-Brightness` (verlichting 0-100, hoger als er een bijzonder toestel is), `X-Page` en `X-Hotspots` (aanraakzones `id:x,y,w,h;…`).
+
+Aanraken op het scherm: een toestel opent de detailkaart (groot beeld, route op een kaartje, hoogte, snelheid, kijkrichting met de hoek boven de horizon, afmetingen, eerste vlucht), de titel het verzamelboek (alle types die dit jaar boven de plek gezien zijn, bewaard in Blob in `boek/v1/`, plus een lijst om nog te spotten), de klok de radarkaart (ringen, vliegvelden in de buurt, toestellen met hun koers). Elders tikken toont de balk voor de helderheid. Na een minuut gaat het scherm vanzelf terug naar het overzicht. Is er een zeldzaam of militair toestel in beeld, dan krijgt het overzicht een gekleurde rand en een melding.
 
 ### Binnen het gratis plan van Vercel blijven
 

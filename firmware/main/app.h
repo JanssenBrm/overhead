@@ -26,6 +26,7 @@ esp_err_t display_show_jpeg(const uint8_t *jpg, size_t len); // jpg tonen (kopie
 esp_err_t display_show_buffer(size_t len);       // jpg in display_jpeg_buffer() tonen
 void display_level(int level, int levels);       // balk voor de helderheid over het beeld
 void display_redraw(void);                       // laatste beeld opnieuw tonen (balk weg)
+void display_busy(int x, int y);                 // klein teken waar getikt werd, tot het nieuwe beeld er is
 
 // touch.c
 esp_err_t touch_init(void);

@@ -1,6 +1,6 @@
 {
   "name": "Overhead-scherm",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "new_install_prompt_erase": true,
   "builds": [{ "chipFamily": "ESP32-P4", "parts": [{ "path": "overhead-full.bin", "offset": 0 }] }]
 }
