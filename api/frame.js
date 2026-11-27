@@ -50,6 +50,18 @@ const n = (v) => (Math.round(v * 100) / 100).toString();
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const nf = new Intl.NumberFormat("nl-BE");
 
+// Warm papiergrijs voor het scherm in de lijst, en een menging van twee hexkleuren
+const PAPER = "#e4ddd1";
+function mix(a, b, t) {
+  const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const x = p(a), y = p(b);
+  return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+// Het IPS-scherm toont middentonen veel lichter dan een computerscherm: met deze curve worden grijze
+// letters donkerder, terwijl wit en zwart blijven wat ze zijn
+const GAMMA = 1.45;
+const LUT = Uint8Array.from({ length: 256 }, (_, i) => Math.round(255 * Math.pow(i / 255, GAMMA)));
+
 const THEMES = {
   // Donkerder dan op de website: het scherm toont grijstinten veel lichter dan een computerscherm
   day: { ink: "#0b0d10", muted: "#3a4048", faint: "#5f666e", line: "#d9dde2", climb: "#0d6b37", descend: "#9c4f00", cruise: "#1d4bb0", ground: "#3a4048", shadow: ["#111316", 0.13] },
@@ -301,7 +313,9 @@ async function render(q) {
   const night = q.nacht === "aan" || (q.nacht !== "uit" && ph === "nacht");
   const theme = night ? THEMES.night : THEMES.day;
   const cond = condition(wx?.code);
-  const sky = night ? ["#0a1430", "#141d36"] : q.nacht === "uit" ? ["#ffffff", "#ffffff"] : skyColors(ph, cond);
+  let sky = night ? ["#0a1430", "#141d36"] : q.nacht === "uit" ? ["#ffffff", "#ffffff"] : skyColors(ph, cond);
+  // Op het scherm zelf: overdag een zachtere, warmere ondergrond (minder fel wit, oogt minder als een scherm)
+  if (q._fw && !night) sky = sky.map((c) => mix(c, PAPER, 0.55));
   const tz = wx?.timezone || "Europe/Brussels";
 
   const list = (data.aircraft || []).map((a) => ({ ...a, sp: spec(a) }));
@@ -403,7 +417,9 @@ export default async function handler(req, res) {
     // 's Nachts staat het scherm gedimd: om het kwartier volstaat, dat spaart rekentijd en dataverkeer
     res.setHeader("X-Refresh", out.error ? "30" : out.night ? "900" : "60");
     res.setHeader("X-Aircraft", String(out.count));
-    res.setHeader("Access-Control-Expose-Headers", "X-Night, X-Refresh, X-Aircraft");
+    // Helderheid van de verlichting (0-100); de firmware volgt die vanaf 1.0.3
+    res.setHeader("X-Brightness", out.night ? "8" : "55");
+    res.setHeader("Access-Control-Expose-Headers", "X-Night, X-Refresh, X-Aircraft, X-Brightness");
     res.setHeader("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");
     res.setHeader("Vary", "User-Agent"); // het versienummer hangt af van wie het beeld vraagt
     if (fmt === "svg") {
@@ -431,7 +447,14 @@ export default async function handler(req, res) {
     const png = rendered.asPng();
     if (fmt === "jpg" || fmt === "jpeg") {
       res.setHeader("Content-Type", "image/jpeg");
-      res.status(200).send(await sharp(png).jpeg({ quality: 88 }).toBuffer());
+      let img = sharp(png);
+      if (q._fw && !out.night) {
+        // Kleurcurve voor het scherm (zie GAMMA): op de ruwe pixels
+        const { data, info } = await img.removeAlpha().raw().toBuffer({ resolveWithObject: true });
+        for (let i = 0; i < data.length; i++) data[i] = LUT[data[i]];
+        img = sharp(data, { raw: { width: info.width, height: info.height, channels: info.channels } });
+      }
+      res.status(200).send(await img.jpeg({ quality: 88 }).toBuffer());
       return;
     }
     res.setHeader("Content-Type", "image/png");

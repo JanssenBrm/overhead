@@ -25,7 +25,7 @@ static const char *TAG = "overhead";
 static settings_t cfg;
 static volatile bool setup_mode;
 
-#define BRIGHT_DAY 90
+#define BRIGHT_DAY 60
 #define BRIGHT_NIGHT 12
 
 static void show_setup(void)
@@ -37,7 +37,7 @@ static void show_setup(void)
 }
 
 // Haalt het beeld op in de invoerbuffer van de decoder. Geeft de lengte terug (0 bij een fout).
-static size_t fetch(int *refresh, bool *night)
+static size_t fetch(int *refresh, bool *night, int *bright)
 {
     char url[300];
     strlcpy(url, cfg.url, sizeof(url));
@@ -62,6 +62,8 @@ static size_t fetch(int *refresh, bool *night)
         if (esp_http_client_get_header(h, "X-Refresh", &v) == ESP_OK && v) *refresh = atoi(v);
         v = NULL;
         if (esp_http_client_get_header(h, "X-Night", &v) == ESP_OK && v) *night = v[0] == '1';
+        v = NULL;
+        if (esp_http_client_get_header(h, "X-Brightness", &v) == ESP_OK && v) *bright = atoi(v); // de server bepaalt de helderheid
         if (status == 200) {
             int n;
             while (got < cap && (n = esp_http_client_read(h, (char *)buf + got, cap - got)) > 0) got += n;
@@ -118,7 +120,8 @@ static void frame_task(void *arg)
         }
         int refresh = 60;
         bool night = false;
-        size_t len = fetch(&refresh, &night);
+        int bright = -1;
+        size_t len = fetch(&refresh, &night, &bright);
         if (len && display_show_buffer(len) == ESP_OK) {
             if (!shown) {
                 improv_set_state(4, cfg.url);
@@ -127,7 +130,7 @@ static void frame_task(void *arg)
             }
             shown = true;
             fails = 0;
-            display_brightness(night ? BRIGHT_NIGHT : BRIGHT_DAY);
+            display_brightness(bright >= 0 ? bright : night ? BRIGHT_NIGHT : BRIGHT_DAY);
         } else {
             refresh = 30;
             if (++fails == 10) { // ± 5 minuten niets: toon het, maar het laatste goede beeld blijft tot dan staan
