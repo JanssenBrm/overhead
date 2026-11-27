@@ -24,6 +24,7 @@ import { waitUntil } from "@vercel/functions";
 import { Illustrate, T, spec } from "../lib/art.js";
 import { getAircraft, distKm } from "../lib/adsb.js";
 import { loadBook, recordSightings, WISH } from "../lib/book.js";
+import { notesBetween } from "../lib/changelog.js";
 import { getWeather, condition, phase, skyColors } from "../lib/sky.js";
 import { scenery, defs as sceneryDefs, bandHeight } from "../lib/scenery.js";
 import { PREFIX, ensurePainting, paintingConfigured } from "../lib/painting.js";
@@ -721,11 +722,58 @@ async function pageBook(c) {
   return { svg: closeSvg(c, parts), refresh: 60 };
 }
 
+/* ---------- Pagina: nieuwe software (vraag, bezig, mislukt) ---------- */
+// De voortgangsbalk tijdens het installeren tekent het scherm zelf, op deze plek (zie firmware display_progress)
+const PROGRESS = { x: 262, y: 392, w: 500, h: 14 };
+
+async function pageUpdate(c) {
+  const { W, H, u, theme, q } = c;
+  const from = String(q._fw || "?"), to = String(q.naar || "").replace(/[^\w.\-]/g, "").slice(0, 20);
+  const step = ["bezig", "mislukt"].includes(q.stap) ? q.stap : "vraag";
+  const parts = openSvg(c);
+  const cw = 620 * u, ch = 380 * u, cx = (W - cw) / 2, cy = (H - ch) / 2;
+  parts.push(`<rect x="${n(cx)}" y="${n(cy)}" width="${n(cw)}" height="${n(ch)}" rx="${n(22 * u)}" fill="${c.night ? "#1b2232" : "#f4f1ea"}" filter="url(#sh)"/>`);
+  const L = cx + 44 * u;
+  const text = (t, y, font, size, fill, anchor = "start", x = L) => parts.push(`<text x="${n(x)}" y="${n(y)}" text-anchor="${anchor}" ${fontAttrs(font)} font-size="${n(size)}" fill="${fill}">${esc(t)}</text>`);
+  text("NIEUWE SOFTWARE VOOR HET SCHERM", cy + 54 * u, "mono400", 13 * u, theme.muted);
+  if (step === "vraag") {
+    text(`Versie ${to} is klaar`, cy + 96 * u, "sans600", 32 * u, theme.ink);
+    text(`Nu geïnstalleerd: ${from}`, cy + 124 * u, "sans400", 15 * u, theme.muted);
+    const notes = notesBetween(from, to).slice(0, 4);
+    notes.forEach((t, i) => {
+      const y = cy + 168 * u + i * 30 * u;
+      parts.push(`<circle cx="${n(L + 5 * u)}" cy="${n(y - 5 * u)}" r="${n(3.5 * u)}" fill="${theme.climb}"/>`);
+      text(t, y, "sans400", 17 * u, theme.ink, "start", L + 20 * u);
+    });
+    // Knoppen
+    const by = cy + ch - 92 * u, bh = 54 * u, gap = 16 * u, bw = (cw - 88 * u - gap) / 2;
+    parts.push(`<rect x="${n(L)}" y="${n(by)}" width="${n(bw)}" height="${n(bh)}" rx="${n(bh / 2)}" fill="none" stroke="${theme.ink}" stroke-opacity="0.35" stroke-width="${n(1.5 * u)}"/>`);
+    text("Later", by + bh / 2 + 7 * u, "sans500", 19 * u, theme.ink, "middle", L + bw / 2);
+    parts.push(`<rect x="${n(L + bw + gap)}" y="${n(by)}" width="${n(bw)}" height="${n(bh)}" rx="${n(bh / 2)}" fill="${theme.ink}"/>`);
+    text("Installeren", by + bh / 2 + 7 * u, "sans600", 19 * u, c.night ? "#0a1430" : "#f4f1ea", "middle", L + bw + gap + bw / 2);
+    c.hs.push({ id: "@later", x: L - 10 * u, y: by - 10 * u, w: bw + 20 * u, h: bh + 20 * u });
+    c.hs.push({ id: "@installeren", x: L + bw + gap - 10 * u, y: by - 10 * u, w: bw + 20 * u, h: bh + 20 * u });
+    text("Installeren duurt ongeveer een minuut. Daarna start het scherm opnieuw.", cy + ch + 34 * u, "sans400", 14 * u, theme.muted, "middle", W / 2);
+  } else if (step === "bezig") {
+    text(`Versie ${to} installeren…`, cy + 96 * u, "sans600", 32 * u, theme.ink);
+    text("Trek de stroom niet uit. Het scherm herstart vanzelf.", cy + 130 * u, "sans400", 17 * u, theme.muted);
+    // Lege balk; het scherm vult ze
+    parts.push(`<rect x="${n(PROGRESS.x * u)}" y="${n(PROGRESS.y * u)}" width="${n(PROGRESS.w * u)}" height="${n(PROGRESS.h * u)}" rx="${n((PROGRESS.h * u) / 2)}" fill="${theme.ink}" fill-opacity="0.12"/>`);
+  } else {
+    text("Installeren lukte niet", cy + 96 * u, "sans600", 32 * u, theme.ink);
+    text(`Het scherm werkt gewoon verder met versie ${from}.`, cy + 130 * u, "sans400", 17 * u, theme.muted);
+    text("Het probeert het later opnieuw.", cy + 156 * u, "sans400", 17 * u, theme.muted);
+    c.hs.push({ id: "@terug", x: 0, y: 0, w: W, h: H });
+    backHint(c, parts);
+  }
+  return { svg: closeSvg(c, parts), refresh: step === "vraag" ? 600 : 60 };
+}
+
 async function render(q) {
-  const page = ["detail", "radar", "boek"].includes(q.pagina) ? q.pagina : "overzicht";
+  const page = ["detail", "radar", "boek", "update"].includes(q.pagina) ? q.pagina : "overzicht";
   const hex = String(q.hex || "").toLowerCase().replace(/[^0-9a-f~]/g, "").slice(0, 8);
   const c = await context(q, { paintFor: page === "detail" ? (a) => a.hex === hex : page === "overzicht" ? null : () => false });
-  const out = page === "detail" ? await pageDetail(c, hex) : page === "radar" ? await pageRadar(c) : page === "boek" ? await pageBook(c) : await pageOverview(c);
+  const out = page === "update" ? await pageUpdate(c) : page === "detail" ? await pageDetail(c, hex) : page === "radar" ? await pageRadar(c) : page === "boek" ? await pageBook(c) : await pageOverview(c);
   // Aanraakzones voor het scherm: "id:x,y,w,h;..." (gehele pixels)
   const hs = c.hs.map((h) => `${h.id}:${Math.round(h.x)},${Math.round(h.y)},${Math.round(h.w)},${Math.round(h.h)}`).join(";");
   return { ...out, W: c.W, H: c.H, night: c.night, count: c.data.error ? 0 : c.list.length, error: !!c.data.error, hs, page };

@@ -48,11 +48,14 @@ typedef struct { char id[10]; int16_t x, y, w, h; } hotspot_t;
 #define MAX_HS 48
 static hotspot_t hs[MAX_HS];
 static int n_hs;
-static char page_q[40];              // extra parameters voor de huidige pagina ("" = overzicht)
+static char page_q[64];              // extra parameters voor de huidige pagina ("" = overzicht)
 static int64_t page_until;           // na deze tijd terug naar het overzicht
 static SemaphoreHandle_t page_lock;
 static TaskHandle_t frame_handle;
 #define PAGE_SECONDS 60
+static char pending[24];             // nieuwere versie die klaarstaat ("" = geen)
+static int64_t ask_after;            // niet opnieuw vragen voor dit moment
+static volatile bool install_req;
 
 static void parse_hotspots(const char *v)
 {
@@ -88,6 +91,13 @@ static bool open_hotspot(int x, int y)
         const hotspot_t *z = &hs[i];
         if (x < z->x || y < z->y || x >= z->x + z->w || y >= z->y + z->h) continue;
         if (!strcmp(z->id, "@terug")) page_q[0] = 0;
+        else if (!strcmp(z->id, "@later")) {
+            page_q[0] = 0;
+            ask_after = esp_timer_get_time() + 24LL * 3600 * 1000000; // morgen opnieuw vragen
+        } else if (!strcmp(z->id, "@installeren")) {
+            snprintf(page_q, sizeof(page_q), "&pagina=update&stap=bezig&naar=%s", pending);
+            install_req = true;
+        }
         else if (z->id[0] == '@') snprintf(page_q, sizeof(page_q), "&pagina=%s", z->id + 1);
         else snprintf(page_q, sizeof(page_q), "&pagina=detail&hex=%s", z->id);
         page_until = esp_timer_get_time() + (int64_t)PAGE_SECONDS * 1000000;
@@ -261,10 +271,32 @@ static void frame_task(void *arg)
         if (refresh > 3600) refresh = 3600;
 
         // Updates: kort na het opstarten en daarna om de 6 uur
+        // Nieuwe software: kort na het opstarten en daarna elk uur nakijken; installeren pas na een tik
         int64_t now = esp_timer_get_time() / 1000000;
-        if (last_ota < 0 ? now > 60 : now - last_ota > 6 * 3600) {
+        if (install_req && strstr(page_q, "stap=bezig")) {
+            install_req = false;
+            if (ota_install(cfg.url, display_progress) != ESP_OK) { // geeft alleen terug als het mislukt
+                xSemaphoreTake(page_lock, portMAX_DELAY);
+                snprintf(page_q, sizeof(page_q), "&pagina=update&stap=mislukt");
+                page_until = esp_timer_get_time() + 60LL * 1000000;
+                xSemaphoreGive(page_lock);
+                pending[0] = 0;
+                ask_after = esp_timer_get_time() + 6LL * 3600 * 1000000;
+                continue;
+            }
+        }
+        if (last_ota < 0 ? now > 60 : now - last_ota > 3600) {
             last_ota = now;
-            ota_check(cfg.url);
+            ota_available(cfg.url, pending, sizeof(pending));
+        }
+        if (pending[0] && !page_q[0] && esp_timer_get_time() > ask_after) {
+            // Vragen; blijft 10 minuten staan, en wie niet antwoordt krijgt de vraag over 6 uur opnieuw
+            xSemaphoreTake(page_lock, portMAX_DELAY);
+            snprintf(page_q, sizeof(page_q), "&pagina=update&naar=%s", pending);
+            page_until = esp_timer_get_time() + 600LL * 1000000;
+            xSemaphoreGive(page_lock);
+            ask_after = esp_timer_get_time() + 6LL * 3600 * 1000000;
+            continue;
         }
         // Op een pagina: niet langer wachten dan tot ze verloopt
         int64_t left = page_q[0] ? (page_until - esp_timer_get_time()) / 1000000 + 1 : refresh;

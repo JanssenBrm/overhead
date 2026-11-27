@@ -27,6 +27,7 @@ esp_err_t display_show_buffer(size_t len);       // jpg in display_jpeg_buffer()
 void display_level(int level, int levels);       // balk voor de helderheid over het beeld
 void display_redraw(void);                       // laatste beeld opnieuw tonen (balk weg)
 void display_busy(int x, int y);                 // klein teken waar getikt werd, tot het nieuwe beeld er is
+void display_progress(int percent);              // voortgangsbalk tijdens een update (plek zoals op de server)
 
 // touch.c
 esp_err_t touch_init(void);
@@ -60,4 +61,5 @@ void improv_start(void);
 void improv_set_state(int state, const char *url);
 
 // ota.c
-void ota_check(const char *frame_url);
+bool ota_available(const char *frame_url, char *out, size_t cap);
+esp_err_t ota_install(const char *frame_url, void (*progress)(int percent));

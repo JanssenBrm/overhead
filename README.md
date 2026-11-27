@@ -57,7 +57,7 @@ Gemeten: ± 0,17 s rekentijd en ± 75 KB per beeld (jpg). Met één scherm (over
 
 ### Software voor het scherm (`firmware/`)
 
-ESP-IDF-project voor het Elecrow CrowPanel Advanced 10,1" (ESP32-P4, wifi via de ingebouwde ESP32-C6). Het scherm haalt `/api/frame` als jpg op, decodeert het met de jpg-decoder van de P4, wacht `X-Refresh` seconden en dimt de verlichting als `X-Night` 1 is. Zonder wifi zet het een toegangspunt `Overhead-scherm` op met een instelpagina op `http://192.168.4.1`; 5 seconden aanraken vergeet de wifi. Om de 6 uur kijkt het naar `/fw/<variant>/version.txt` en installeert het een nieuwere versie zelf (met terugval naar de vorige als de nieuwe niet werkt).
+ESP-IDF-project voor het Elecrow CrowPanel Advanced 10,1" (ESP32-P4, wifi via de ingebouwde ESP32-C6). Het scherm haalt `/api/frame` als jpg op, decodeert het met de jpg-decoder van de P4, wacht `X-Refresh` seconden en dimt de verlichting als `X-Night` 1 is. Zonder wifi zet het een toegangspunt `Overhead-scherm` op met een instelpagina op `http://192.168.4.1`; 5 seconden aanraken vergeet de wifi. Elk uur kijkt het naar `/fw/<variant>/version.txt`; een nieuwere versie wordt na een tik op *Installeren* geïnstalleerd (met terugval naar de vorige als de nieuwe niet werkt).
 
 Installeren gebeurt in de browser op `/installeer` (Chrome of Edge, via USB): de pagina herkent de chip, zet de juiste software erop ([ESP Web Tools](https://esphome.github.io/esp-web-tools/)), vraagt de wifi (Improv) en kan het adres van het beeld doorsturen.
 
@@ -71,7 +71,7 @@ cd firmware
 tools/build.sh 1.0.1      # haalt de componenten op, bouwt beide varianten naar ../fw/
 ```
 
-Een nieuwe versie uitrollen: versienummer verhogen, bouwen, `fw/` committen en pushen. De schermen nemen ze binnen zes uur over.
+Een nieuwe versie uitrollen: versienummer verhogen, een regel toevoegen in `lib/changelog.js`, bouwen, `fw/` committen en pushen. Het scherm kijkt elk uur of er een nieuwere versie is en vraagt dan op het scherm of ze geïnstalleerd mag worden (met wat er nieuw is). *Later* vraagt het de volgende dag opnieuw; wie niet antwoordt krijgt de vraag na zes uur opnieuw. Tijdens het installeren toont het scherm een voortgangsbalk.
 
 De pagina `/frame` toont het beeld in een lijst, met de instellingen van de live pagina, en geeft het adres voor het scherm.
 

@@ -256,3 +256,16 @@ void display_busy(int x, int y)
     esp_cache_msync(fb, (size_t)APP_W * APP_H * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     xSemaphoreGive(lock);
 }
+
+// Voortgangsbalk op de plek die de server voorziet (api/frame.js: PROGRESS)
+void display_progress(int percent)
+{
+    if (!fb) return;
+    const int X = 262, Y = 392, W = 500, H = 14;
+    int w = W * (percent < 0 ? 0 : percent > 100 ? 100 : percent) / 100;
+    if (w < H) w = H;
+    xSemaphoreTake(lock, portMAX_DELAY);
+    rounded(X, Y, w, H, H / 2, RGB565(13, 107, 55));
+    esp_cache_msync(fb, (size_t)APP_W * APP_H * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    xSemaphoreGive(lock);
+}
