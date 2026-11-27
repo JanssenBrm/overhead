@@ -177,7 +177,7 @@ function measure(a, k, u, maxCap, theme) {
     const il = illustration(a, sp, kk);
     img = { kind: "illu", ...il };
   }
-  const s = clamp(img.w / (260 * u), 0.85, 1.25) * u;
+  const s = clamp(img.w / (260 * u), 1, 1.25) * u; // kleine toestellen: niet kleiner dan de gewone tekst
   const fs = 14 * s;
   const capMax = Math.max(img.w, maxCap);
   const lines = [];
