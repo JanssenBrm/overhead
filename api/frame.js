@@ -51,7 +51,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const nf = new Intl.NumberFormat("nl-BE");
 
 // Warm papiergrijs voor het scherm in de lijst, en een menging van twee hexkleuren
-const PAPER = "#e4ddd1";
+const PAPER = "#dcd5c8";
 function mix(a, b, t) {
   const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const x = p(a), y = p(b);
@@ -315,7 +315,7 @@ async function render(q) {
   const cond = condition(wx?.code);
   let sky = night ? ["#0a1430", "#141d36"] : q.nacht === "uit" ? ["#ffffff", "#ffffff"] : skyColors(ph, cond);
   // Op het scherm zelf: overdag een zachtere, warmere ondergrond (minder fel wit, oogt minder als een scherm)
-  if (q._fw && !night) sky = sky.map((c) => mix(c, PAPER, 0.55));
+  if (q._fw && !night) sky = sky.map((c) => mix(c, PAPER, 0.7));
   const tz = wx?.timezone || "Europe/Brussels";
 
   const list = (data.aircraft || []).map((a) => ({ ...a, sp: spec(a) }));
@@ -418,7 +418,7 @@ export default async function handler(req, res) {
     res.setHeader("X-Refresh", out.error ? "30" : out.night ? "900" : "60");
     res.setHeader("X-Aircraft", String(out.count));
     // Helderheid van de verlichting (0-100); de firmware volgt die vanaf 1.0.3
-    res.setHeader("X-Brightness", out.night ? "8" : "55");
+    res.setHeader("X-Brightness", out.night ? "6" : "40");
     res.setHeader("Access-Control-Expose-Headers", "X-Night, X-Refresh, X-Aircraft, X-Brightness");
     res.setHeader("Cache-Control", "public, s-maxage=20, stale-while-revalidate=40");
     res.setHeader("Vary", "User-Agent"); // het versienummer hangt af van wie het beeld vraagt
