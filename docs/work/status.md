@@ -3,23 +3,24 @@ type: Work Status
 title: Current state and open work
 description: Running record of what is in progress, known issues and follow-ups, kept up to date by the agent.
 tags: [work, status]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-28T08:25:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-28T08:40:00Z }
 ---
 # State (2026-11-28)
-- Website + API live on Vercel; firmware **1.2.2** published for rev1 and rev3.
+- Website + API live on Vercel; firmware **1.2.2** published for rev1 and rev3; the attached screen (rev1) runs 1.2.2.
 - Docs bundle created (this directory).
 
 # Open issues
-- **Black screen after replugging power (intermittent).** User report: after unplug/replug the screen flashes white,
-  shows the "loading flights" start screen, then goes black. Under investigation — see [log](/log.md).
-  Firmware 1.2.2 already added LDO4, a 120 ms settle delay and restart-on-init-failure for this class of problem.
-  - 2026-11-28 findings: the device still ran **1.2.1** (rev1, chip v1.3; 1.2.2 was never installed).
-    EN-pin reset boots fine. A real power replug reproduced the black screen, but the serial log was fully
-    healthy (C6 up, Wi-Fi at 9.7 s, frames decoded with real pixel values, taps handled). The user saw a
-    **faint backlight glow**: the backlight is on, the P4 runs, and the **panel itself stops showing the framebuffer** after a cold start.
-    Most likely cause: panel analog supply (LDO4) not enabled in 1.2.1. Next step: flash 1.2.2 and repeat replug tests.
-  - If 1.2.2 does not fix it: candidates are DSI/panel init timing on cold power (panel has no reset pin),
-    and a supply dip when the C6 boots (~2.8–5 s) knocking the panel out. Then add a panel re-init / health check.
+- None known.
+
+# Resolved
+- **Black screen after replugging power** (fixed by firmware 1.2.2, verified 2026-11-28).
+  Symptom: white flash, start screen, then black with a faint backlight glow. On 1.2.1 the serial log stayed fully
+  healthy (Wi-Fi up, frames decoded, taps handled): the panel itself dropped out after a cold start.
+  Cause: 1.2.1 did not enable the panel's analog 3.3 V supply (on-chip **LDO4**). 1.2.2 acquires LDO4 next to LDO3
+  and waits 120 ms before panel init ([hardware](/firmware/hardware.md)). Reproduced on 1.2.1 with a real power replug;
+  after flashing 1.2.2 over serial, 4/4 replugs (including one with ~1.5 s off) showed the flights.
+  A plain EN-pin reset never reproduced it, so always test power issues with a real replug.
+  Other screens still on 1.2.1 will get the 1.2.2 update prompt via [OTA](/firmware/ota.md).
 
 # Notes
 - README route section was outdated (said adsb.lol routeset); routes now come from VRS standing data + adsbdb.
