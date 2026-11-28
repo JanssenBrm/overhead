@@ -65,10 +65,15 @@ esp_err_t display_init(void)
 {
     lock = xSemaphoreCreateMutex();
 
-    // De MIPI-PHY krijgt zijn spanning van LDO3 (2,5 V)
-    static esp_ldo_channel_handle_t ldo3;
-    const esp_ldo_channel_config_t ldo_cfg = { .chan_id = 3, .voltage_mv = 2500 };
-    ESP_RETURN_ON_ERROR(esp_ldo_acquire_channel(&ldo_cfg, &ldo3), TAG, "ldo3");
+    // De MIPI-PHY krijgt zijn spanning van LDO3 (2,5 V), het analoge deel van het paneel van LDO4 (3,3 V),
+    // zoals in het schermvoorbeeld van Elecrow. Zonder LDO4 kwam het paneel na een koude start soms niet op.
+    static esp_ldo_channel_handle_t ldo3, ldo4;
+    const esp_ldo_channel_config_t ldo3_cfg = { .chan_id = 3, .voltage_mv = 2500 };
+    ESP_RETURN_ON_ERROR(esp_ldo_acquire_channel(&ldo3_cfg, &ldo3), TAG, "ldo3");
+    const esp_ldo_channel_config_t ldo4_cfg = { .chan_id = 4, .voltage_mv = 3300 };
+    ESP_RETURN_ON_ERROR(esp_ldo_acquire_channel(&ldo4_cfg, &ldo4), TAG, "ldo4");
+    // Het paneel heeft geen resetpin: geef de spanningen even tijd om stabiel te worden na het insteken
+    vTaskDelay(pdMS_TO_TICKS(120));
 
     ESP_RETURN_ON_ERROR(backlight_init(), TAG, "backlight");
 

@@ -1,7 +1,7 @@
 menu "Overhead"
     config OVERHEAD_VERSION
         string "Firmwareversie"
-        default "1.2.1"
+        default "1.2.2"
     config OVERHEAD_VARIANT
         string "Variant (map op de site: rev1 voor chips voor v3, rev3 vanaf v3)"
         default "rev1"

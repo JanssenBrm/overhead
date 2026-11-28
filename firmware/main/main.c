@@ -338,8 +338,12 @@ void app_main(void)
         nvs_flash_erase();
         nvs_flash_init();
     }
+    ESP_LOGI(TAG, "reden van opstart: %d", (int)esp_reset_reason());
     if (display_init() != ESP_OK) {
-        ESP_LOGE(TAG, "scherm start niet");
+        // Zonder scherm heeft doorgaan geen zin: dan bleef het zwart terwijl de wifi wel draaide
+        ESP_LOGE(TAG, "scherm start niet, opnieuw opstarten");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        esp_restart();
     }
     display_show_jpeg(start_jpg_start, start_jpg_end - start_jpg_start);
     level = settings_get_int("bright", LEVEL_DEFAULT);
@@ -361,7 +365,12 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(300));
     ESP_LOGI(TAG, "wifi-chip gereset");
 
-    ESP_ERROR_CHECK(net_init());
+    if (net_init() != ESP_OK) {
+        // De wifi-chip antwoordde niet (komt soms voor vlak na het insteken): nog eens van voren af aan
+        ESP_LOGE(TAG, "wifi-chip start niet, opnieuw opstarten");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        esp_restart();
+    }
     improv_start();
 
     if (cfg.ssid[0]) {
