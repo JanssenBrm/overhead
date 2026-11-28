@@ -26,7 +26,7 @@ Extra's:
 ## Hoe het werkt
 
 - `index.html`: de volledige pagina inclusief de tekencode voor de illustraties, zonder build-stap.
-- `api/aircraft.js`: Vercel-functie die posities ophaalt bij [adsb.lol](https://adsb.lol) (met [adsb.fi](https://adsb.fi) als reserve) en routes aanvult via de routedatabank van adsb.lol/adsb.im (met [adsbdb](https://www.adsbdb.com) als reserve). Elke route wordt getoetst aan positie en koers: past ze niet, dan toont de site "route onbekend" in plaats van een foute route.
+- `api/aircraft.js`: Vercel-functie die posities ophaalt bij [adsb.lol](https://adsb.lol) (met adsb.fi en airplanes.live als reserve) en routes aanvult uit de standing data van Virtual Radar Server (CC0, met [adsbdb](https://www.adsbdb.com) als reserve). Elke route wordt getoetst aan positie en koers: past ze niet, dan toont de site "route onbekend" in plaats van een foute route.
 - `api/geocode.js`: plaatsnamen zoeken via [Open-Meteo](https://open-meteo.com).
 
 Silhouetten worden getekend uit een tabel met ICAO-typecodes (spanwijdte, lengte, vorm). Onbekende types vallen terug op de ADS-B-categorie.
@@ -76,6 +76,10 @@ Een nieuwe versie uitrollen: versienummer verhogen, een regel toevoegen in `lib/
 De pagina `/frame` toont het beeld in een lijst, met de instellingen van de live pagina, en geeft het adres voor het scherm.
 
 De tekencode in `lib/art.js` en het decor in `lib/scenery.js` staan ook als kopie in `index.html`: pas beide aan.
+
+## Documentatie
+
+Technische documentatie (OKF-formaat) staat in [`docs/`](docs/index.md).
 
 ## Lokaal draaien
 
