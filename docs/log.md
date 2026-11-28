@@ -2,4 +2,5 @@
 
 ## 2026-11-28
 * **Creation**: OKF v0.2 documentation bundle in `docs/` covering system, API, lib, web pages, firmware and playbooks.
+* **Update**: Black screen after replug reproduced on firmware 1.2.1: firmware healthy, backlight on, panel shows nothing (see `/work/status.md`).
 * **Update**: Started investigating the intermittent black screen after power replug (see `/work/status.md`).
